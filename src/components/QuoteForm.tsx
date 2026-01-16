@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSubmitQuoteRequest } from "@/hooks/useConfigurator";
 
 export const QuoteForm = () => {
   const [name, setName] = useState("");
@@ -13,10 +14,11 @@ export const QuoteForm = () => {
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const { toast } = useToast();
+  const submitQuote = useSubmitQuoteRequest();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!name || !email || !message) {
       toast({
@@ -27,16 +29,32 @@ export const QuoteForm = () => {
       return;
     }
 
-    toast({
-      title: "Anfrage gesendet",
-      description: "Wir werden uns schnellstmöglich bei Ihnen melden!"
-    });
+    try {
+      await submitQuote.mutateAsync({
+        name,
+        email,
+        phone: phone || null,
+        message,
+      });
 
-    // Reset form
-    setName("");
-    setEmail("");
-    setPhone("");
-    setMessage("");
+      toast({
+        title: "Anfrage gesendet",
+        description: "Wir werden uns schnellstmöglich bei Ihnen melden!"
+      });
+
+      // Reset form
+      setName("");
+      setEmail("");
+      setPhone("");
+      setMessage("");
+    } catch (error) {
+      console.error("Error submitting quote:", error);
+      toast({
+        title: "Fehler",
+        description: "Beim Senden ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -60,6 +78,7 @@ export const QuoteForm = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
+                    disabled={submitQuote.isPending}
                   />
                 </div>
 
@@ -72,6 +91,7 @@ export const QuoteForm = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={submitQuote.isPending}
                   />
                 </div>
 
@@ -83,6 +103,7 @@ export const QuoteForm = () => {
                     placeholder="+43 ..."
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    disabled={submitQuote.isPending}
                   />
                 </div>
 
@@ -95,14 +116,29 @@ export const QuoteForm = () => {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     required
+                    disabled={submitQuote.isPending}
                   />
                 </div>
 
-                <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90">
-                  <Send className="mr-2 h-5 w-5" />
-                  Angebot schicken lassen
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={submitQuote.isPending}
+                >
+                  {submitQuote.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Wird gesendet...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-5 w-5" />
+                      Angebot schicken lassen
+                    </>
+                  )}
                 </Button>
-                
+
                 <p className="text-xs text-center text-muted-foreground mt-2">
                   Unverbindlich & kostenlos • Antwort innerhalb von 24 Stunden
                 </p>
