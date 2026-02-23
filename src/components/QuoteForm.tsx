@@ -12,6 +12,8 @@ export const QuoteForm = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [address, setAddress] = useState("");
   const [message, setMessage] = useState("");
   const { toast } = useToast();
   const submitQuote = useSubmitQuoteRequest();
@@ -34,6 +36,8 @@ export const QuoteForm = () => {
         name,
         email,
         phone: phone || null,
+        company: company || null,
+        address: address || null,
         message,
       });
 
@@ -46,6 +50,8 @@ export const QuoteForm = () => {
       setName("");
       setEmail("");
       setPhone("");
+      setCompany("");
+      setAddress("");
       setMessage("");
     } catch (error) {
       console.error("Error submitting quote:", error);
@@ -108,6 +114,28 @@ export const QuoteForm = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="quote-company">Firma (optional)</Label>
+                  <Input
+                    id="quote-company"
+                    placeholder="Firmenname"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    disabled={submitQuote.isPending}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="quote-address">Adresse (optional)</Label>
+                  <Input
+                    id="quote-address"
+                    placeholder="Straße, PLZ, Ort"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    disabled={submitQuote.isPending}
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="message">Ihre Nachricht *</Label>
                   <Textarea
                     id="message"
@@ -140,7 +168,7 @@ export const QuoteForm = () => {
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  Unverbindlich & kostenlos • Antwort innerhalb von 24 Stunden
+                  Unverbindlich & kostenlos • Antwort innerhalb von 24 Stunden an Werktagen
                 </p>
               </form>
             </CardContent>

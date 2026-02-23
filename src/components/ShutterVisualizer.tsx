@@ -9,9 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface ShutterVisualizerProps {
   material: "aluminum" | "wood";
   designName: string;
+  woodType?: string;
+  ralColor?: string;
 }
 
-export const ShutterVisualizer = ({ material, designName }: ShutterVisualizerProps) => {
+export const ShutterVisualizer = ({ material, designName, woodType, ralColor }: ShutterVisualizerProps) => {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [visualizedImage, setVisualizedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +56,9 @@ export const ShutterVisualizer = ({ material, designName }: ShutterVisualizerPro
         body: {
           image: originalImage,
           material,
-          designName
+          designName,
+          woodType: material === "wood" ? woodType : undefined,
+          ralColor
         }
       });
 
@@ -81,6 +85,17 @@ export const ShutterVisualizer = ({ material, designName }: ShutterVisualizerPro
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Build display text for the configuration
+  const getConfigSummary = () => {
+    const parts = [];
+    parts.push(material === "aluminum" ? "Aluminium" : `Holz (${woodType || "Standard"})`);
+    parts.push(designName);
+    if (ralColor) {
+      parts.push(`RAL ${ralColor}`);
+    }
+    return parts.join(" • ");
   };
 
   return (
@@ -130,7 +145,7 @@ export const ShutterVisualizer = ({ material, designName }: ShutterVisualizerPro
                         />
                       </div>
                     </div>
-                    
+
                     {visualizedImage && (
                       <div>
                         <Label className="mb-2 block">Mit Fensterläden</Label>
@@ -156,8 +171,7 @@ export const ShutterVisualizer = ({ material, designName }: ShutterVisualizerPro
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    Die KI montiert die ausgewählten {material === "aluminum" ? "Aluminium" : "Holz"}-Fensterläden 
-                    ({designName}) auf Ihr Bild
+                    Konfiguration: {getConfigSummary()}
                   </p>
                 </>
               )}

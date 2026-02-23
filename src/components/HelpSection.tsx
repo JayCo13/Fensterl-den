@@ -26,9 +26,9 @@ export const HelpSection = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <a 
-                href="https://www.youtube.com/watch?v=example" 
-                target="_blank" 
+              <a
+                href="https://www.youtube.com/watch?v=example"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline font-medium"
               >
@@ -48,8 +48,8 @@ export const HelpSection = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <a 
-                href="#" 
+              <a
+                href="#"
                 className="text-primary hover:underline font-medium"
               >
                 Anleitung lesen →
