@@ -1713,8 +1713,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                             <div className="w-full">
                               <Label className="mb-2 block text-sm font-medium">Beliebte Farben</Label>
                               <RadioGroup value={beschlaegeColor} onValueChange={(v) => { setBeschlaegeColor(v); setBeschlaegeCustomRal(""); }} className="w-full">
-                                <div className="grid grid-cols-3 md:grid-cols-4 gap-2 w-full">
-                                  {ralColors?.slice(0, 4).map((color) => (
+                                <div className="grid grid-cols-3 gap-2 w-full">
+                                  {ralColors?.slice(0, 6).map((color) => (
                                     <div key={`beschlaege-${color.ral_code}`} className="relative w-full">
                                       <RadioGroupItem value={color.ral_code} id={`beschlaege-${color.ral_code}`} className="peer sr-only" />
                                       <Label
