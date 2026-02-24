@@ -195,7 +195,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   }, [customNcs]);
 
   // Beschläge (Hardware) state
-  const [beschlaegeEnabled, setBeschlaegeEnabled] = useState<boolean | null>(null); // null = not selected, true = ja, false = nein
+  const [beschlaegeMode, setBeschlaegeMode] = useState<"none" | "anschlagsart" | "einzelteile" | null>(null); // null = not selected
   const [beschlaegeColor, setBeschlaegeColor] = useState<string>("9016");
   const [beschlaegeCustomRal, setBeschlaegeCustomRal] = useState<string>("");
   const [beschlaegeRohUnbehandelt, setBeschlaegeRohUnbehandelt] = useState<boolean>(false);
@@ -203,6 +203,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
 
   // Anschlagsart state
   const [anschlagsart, setAnschlagsart] = useState<string>("");
+  const [montagerahmenMaterial, setMontagerahmenMaterial] = useState<"" | "aluminium" | "holz">("");
+
+  // Einzelteile state
+  const [einzelteileQuantities, setEinzelteileQuantities] = useState<Record<string, number>>({});
 
   // Flügel (Wings) and additional options
   const [fluegelOption, setFluegelOption] = useState<string>("");
@@ -486,11 +490,13 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           ralColor: rohUnbehandelt ? "Roh / Unbehandelt" : `RAL ${displayRal}`,
           rohUnbehandelt,
           // Beschläge
-          beschlaegeEnabled,
-          beschlaegeColor: beschlaegeEnabled
+          beschlaegeMode,
+          beschlaegeColor: beschlaegeMode && beschlaegeMode !== "none"
             ? (beschlaegeRohUnbehandelt ? "Standard verzinkt" : `RAL ${beschlaegeCustomRal || beschlaegeColor}`)
             : undefined,
-          anschlagsart: beschlaegeEnabled ? anschlagsart : undefined,
+          anschlagsart: beschlaegeMode === "anschlagsart" ? anschlagsart : undefined,
+          montagerahmenMaterial: beschlaegeMode === "anschlagsart" && montagerahmenMaterial ? montagerahmenMaterial : undefined,
+          einzelteile: beschlaegeMode === "einzelteile" ? einzelteileQuantities : undefined,
           // Fenster
           width: parseFloat(width),
           height: parseFloat(height),
@@ -1368,44 +1374,58 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                   <CardHeader className="p-4 md:p-6">
                     <CardTitle className="text-lg md:text-2xl">5. Beschläge</CardTitle>
                     <CardDescription className="text-sm md:text-base">
-                      Möchten Sie Beschläge (Bänder, Griffe, Verschlüsse) hinzufügen?
+                      Möchten Sie Beschläge (Kloben, Ladenhalter, etc.) hinzufügen?
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6 p-4 md:p-6 pt-0 md:pt-0">
 
-                    {/* Yes/No Selection */}
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* 3-Option Selection */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Nein */}
                       <div
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${beschlaegeEnabled === false
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${beschlaegeMode === "none"
                           ? 'border-primary bg-primary/5 shadow-md'
                           : 'border-muted bg-popover hover:border-primary/50'
                           }`}
-                        onClick={() => setBeschlaegeEnabled(false)}
+                        onClick={() => setBeschlaegeMode("none")}
                       >
                         <div className="font-semibold text-lg">Nein</div>
                         <p className="text-xs text-muted-foreground mt-1">Ohne Beschläge</p>
                       </div>
+                      {/* Ja — Anschlagsart */}
                       <div
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${beschlaegeEnabled === true
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${beschlaegeMode === "anschlagsart"
                           ? 'border-primary bg-primary/5 shadow-md'
                           : 'border-muted bg-popover hover:border-primary/50'
                           }`}
-                        onClick={() => setBeschlaegeEnabled(true)}
+                        onClick={() => setBeschlaegeMode("anschlagsart")}
                       >
                         <div className="font-semibold text-lg">Ja</div>
-                        <p className="text-xs text-muted-foreground mt-1">Mit Beschlägen</p>
+                        <p className="text-xs text-muted-foreground mt-1">Beschläge nach Anschlagsart</p>
+                      </div>
+                      {/* Ja — Einzelteile */}
+                      <div
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${beschlaegeMode === "einzelteile"
+                          ? 'border-primary bg-primary/5 shadow-md'
+                          : 'border-muted bg-popover hover:border-primary/50'
+                          }`}
+                        onClick={() => setBeschlaegeMode("einzelteile")}
+                      >
+                        <div className="font-semibold text-lg">Ja</div>
+                        <p className="text-xs text-muted-foreground mt-1">Beschläge Einzelteile</p>
                       </div>
                     </div>
 
-                    {/* Beschläge Color Selection - Only show if ja */}
                     {/* Selection Status */}
-                    <div className="p-4 bg-muted/50 rounded-lg w-full mt-4">
+                    <div className="p-4 bg-muted/50 rounded-lg w-full">
                       <div className="font-semibold">
-                        {beschlaegeEnabled === null
+                        {beschlaegeMode === null
                           ? "Bitte wählen Sie eine Option"
-                          : beschlaegeEnabled
-                            ? "Mit Beschlägen"
-                            : "Ohne Beschläge"
+                          : beschlaegeMode === "none"
+                            ? "Ohne Beschläge"
+                            : beschlaegeMode === "anschlagsart"
+                              ? "Beschläge nach Anschlagsart"
+                              : "Beschläge Einzelteile"
                         }
                       </div>
                     </div>
@@ -1413,8 +1433,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                 </Card>
               </FadeIn>
 
-              {/* Anschlagsarten Section - Only show when Beschläge = Ja */}
-              {beschlaegeEnabled === true && (
+              {/* 5.1 Anschlagsart — shown when mode = "anschlagsart" */}
+              {beschlaegeMode === "anschlagsart" && (
                 <FadeIn className="md:col-span-2" delay={400}>
                   <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden">
                     <CardHeader className="p-4 md:p-6">
@@ -1428,12 +1448,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         {[
                           "Anschlagart 1 – Montage auf Ladenrahmen",
                           "Anschlagart 2 – Montage in Verkleidung",
-                          "Anschlagart 3 – Montage direkt auf Stock",
-                          "Anschlagart 3.1 – Montage direkt auf Stock (mit Distanz)",
-                          "Anschlagart 4 – Montage in Mauerfalz (Schraubkloben mit Holzgewinde)",
-                          "Anschlagart 4.1 – Montage Stumpf, in Laibung (Schraubkloben mit Holzgewinde)",
-                          "Anschlagart 4.2 – Montage auf Mauerwerk (Schraubkloben mit Holzgewinde)",
-                          "Anschlagart 5 – Montage auf Mauerwerk (Läden gefalzt)"
+                          "Anschlagart 3 – Montage direkt auf Stock"
                         ].map((art) => (
                           <div
                             key={art}
@@ -1441,9 +1456,12 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                               ? 'border-primary bg-primary/5 shadow-sm'
                               : 'border-muted bg-popover hover:border-primary/50'
                               }`}
-                            onClick={() => setAnschlagsart(art)}
+                            onClick={() => {
+                              setAnschlagsart(art);
+                              if (!art.includes("Anschlagart 1")) setMontagerahmenMaterial("");
+                            }}
                           >
-                            <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center ${anschlagsart === art ? 'bg-primary' : 'bg-transparent'}`}>
+                            <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${anschlagsart === art ? 'bg-primary' : 'bg-transparent'}`}>
                               {anschlagsart === art && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
                             </div>
                             <span className="text-sm md:text-base font-medium">{art}</span>
@@ -1451,10 +1469,76 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         ))}
                       </div>
 
+                      {/* Sketch + Explanation when an option is selected */}
+                      {anschlagsart && (
+                        <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border/50 space-y-4 animate-in fade-in slide-in-from-top-1">
+                          {/* Sketch Image */}
+                          <div className="flex flex-col md:flex-row gap-4 items-start">
+                            <div className="w-full md:w-1/3 rounded-lg border border-input bg-white overflow-hidden">
+                              <img
+                                src={`/configurator-assets/Anschlagart 1 – Montage auf Ladenrahmen - Skizze.png`}
+                                alt={`${anschlagsart} Skizze`}
+                                className="w-full h-auto object-contain"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <p className="text-sm font-semibold text-primary/80">{anschlagsart}</p>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                Ein Rahmen ist erforderlich, wenn zwischen Laden und Stock, bzw. Glas, zu wenig Luft für den Verschluss oder für die Zugleiste bei Designfigur Nr. 5 (bewegliche Brettchen) ist.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Montagerahmen sub-option — only for Anschlagart 1 */}
+                          {anschlagsart.includes("Anschlagart 1") && (
+                            <div className="p-3 rounded-lg border border-border/50 bg-background/50 space-y-3">
+                              <p className="text-sm font-semibold">Montagerahmen gewünscht? <span className="text-muted-foreground font-normal text-xs">(optional)</span></p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div
+                                  className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${montagerahmenMaterial === "aluminium"
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-muted bg-popover hover:border-primary/50'
+                                    }`}
+                                  onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "aluminium" ? "" : "aluminium")}
+                                >
+                                  <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "aluminium" ? 'bg-primary' : 'bg-transparent'}`}>
+                                    {montagerahmenMaterial === "aluminium" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium">Aluminium</span>
+                                    <span className="text-xs text-muted-foreground ml-1">(40x40mm)</span>
+                                  </div>
+                                </div>
+                                <div
+                                  className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${montagerahmenMaterial === "holz"
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-muted bg-popover hover:border-primary/50'
+                                    }`}
+                                  onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "holz" ? "" : "holz")}
+                                >
+                                  <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "holz" ? 'bg-primary' : 'bg-transparent'}`}>
+                                    {montagerahmenMaterial === "holz" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium">Holz</span>
+                                    <span className="text-xs text-muted-foreground ml-1">(55x30mm)</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Selection Status */}
                       <div className="p-4 bg-muted/50 rounded-lg w-full">
                         <div className="font-semibold">
                           {anschlagsart ? `Gewählt: ${anschlagsart}` : "Bitte wählen Sie eine Anschlagsart"}
+                          {montagerahmenMaterial && (
+                            <span className="text-sm font-normal text-muted-foreground ml-2">
+                              + Montagerahmen {montagerahmenMaterial === "aluminium" ? "Aluminium (40x40mm)" : "Holz (55x30mm)"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -1462,8 +1546,116 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                 </FadeIn>
               )}
 
-              {/* Beschläge Color Section (5.2) - Shown after Anschlagsart */}
-              {beschlaegeEnabled === true && (
+              {/* 5.1 Beschläge Einzelteile — shown when mode = "einzelteile" */}
+              {beschlaegeMode === "einzelteile" && (
+                <FadeIn className="md:col-span-2" delay={400}>
+                  <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden">
+                    <CardHeader className="p-4 md:p-6">
+                      <CardTitle className="text-lg md:text-2xl">5.1 Beschläge Einzelteile</CardTitle>
+                      <CardDescription className="text-sm md:text-base">
+                        Wählen Sie die gewünschten Einzelteile und die jeweilige Anzahl
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
+                      {/* Product Cards */}
+                      {[
+                        {
+                          id: "plattenkloben-verstellbar",
+                          name: "Plattenkloben verstellbar mit Radiusecken",
+                          image: "/configurator-assets/Plattenkloben verstellbar mit Radiusecken.png",
+                          specs: [
+                            { label: "Rundung", value: "5 mm" },
+                            { label: "Verwendung", value: "Siehe z.B. Anschlagart 1" },
+                            { label: "Austragung", value: "90 bis 280 mm" },
+                            { label: "Typ", value: "Für gekröpftes Band, fix oder verstellbar" }
+                          ]
+                        }
+                      ].map((product) => (
+                        <div
+                          key={product.id}
+                          className={`p-4 rounded-lg border-2 transition-all ${(einzelteileQuantities[product.name] || 0) > 0
+                            ? 'border-primary bg-primary/5'
+                            : 'border-muted bg-popover'
+                            }`}
+                        >
+                          <div className="flex flex-col sm:flex-row gap-4">
+                            {/* Product Image */}
+                            <div className="w-full sm:w-32 h-32 rounded-lg border border-input bg-white overflow-hidden flex-shrink-0">
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-full h-full object-contain p-2"
+                              />
+                            </div>
+                            {/* Product Info */}
+                            <div className="flex-1 space-y-2">
+                              <p className="text-sm md:text-base font-semibold">{product.name}</p>
+                              <div className="space-y-1">
+                                {product.specs.map((spec) => (
+                                  <p key={spec.label} className="text-xs text-muted-foreground">
+                                    <span className="font-medium text-foreground/70">{spec.label}:</span> {spec.value}
+                                  </p>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Quantity Input */}
+                            <div className="flex items-center gap-2 sm:flex-col sm:justify-center sm:items-end">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Anzahl:</Label>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => setEinzelteileQuantities(prev => ({
+                                    ...prev,
+                                    [product.name]: Math.max(0, (prev[product.name] || 0) - 1)
+                                  }))}
+                                >
+                                  −
+                                </Button>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={einzelteileQuantities[product.name] || 0}
+                                  onChange={(e) => setEinzelteileQuantities(prev => ({
+                                    ...prev,
+                                    [product.name]: Math.max(0, parseInt(e.target.value) || 0)
+                                  }))}
+                                  className="w-16 h-8 text-center text-sm"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => setEinzelteileQuantities(prev => ({
+                                    ...prev,
+                                    [product.name]: (prev[product.name] || 0) + 1
+                                  }))}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Summary */}
+                      <div className="p-4 bg-muted/50 rounded-lg w-full">
+                        <div className="font-semibold">
+                          {Object.entries(einzelteileQuantities).filter(([, q]) => q > 0).length > 0
+                            ? `${Object.entries(einzelteileQuantities).filter(([, q]) => q > 0).map(([name, qty]) => `${qty}× ${name}`).join(", ")}`
+                            : "Bitte wählen Sie mindestens ein Einzelteil"
+                          }
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </FadeIn>
+              )}
+
+              {/* 5.2 Farbe Beschläge — shown when anschlagsart OR einzelteile */}
+              {(beschlaegeMode === "anschlagsart" || beschlaegeMode === "einzelteile") && (
                 <FadeIn className="md:col-span-2" delay={450}>
                   <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden">
                     <CardHeader className="p-4 md:p-6">
@@ -1872,13 +2064,23 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                           <div className="bg-background/50 p-3 rounded space-y-1.5">
                             <p className="font-semibold mb-2 text-primary/80">Beschläge</p>
                             <ul className="space-y-1 text-muted-foreground">
-                              <li>• Beschläge: <span className="text-foreground font-medium">{beschlaegeEnabled === true ? "Ja" : beschlaegeEnabled === false ? "Nein" : "Nicht gewählt"}</span></li>
-                              {beschlaegeEnabled && (
+                              <li>• Beschläge: <span className="text-foreground font-medium">{beschlaegeMode === "anschlagsart" ? "Ja – nach Anschlagsart" : beschlaegeMode === "einzelteile" ? "Ja – Einzelteile" : beschlaegeMode === "none" ? "Nein" : "Nicht gewählt"}</span></li>
+                              {beschlaegeMode === "anschlagsart" && (
                                 <>
+                                  <li>• Anschlagsart: <span className="text-foreground font-medium">{anschlagsart || "—"}</span></li>
+                                  {montagerahmenMaterial && (
+                                    <li>• Montagerahmen: <span className="text-foreground font-medium">{montagerahmenMaterial === "aluminium" ? "Aluminium (40x40mm)" : "Holz (55x30mm)"}</span></li>
+                                  )}
                                   <li>• Farbe: <span className="text-foreground font-medium">
                                     {beschlaegeRohUnbehandelt ? "Standard verzinkt" : `RAL ${beschlaegeCustomRal || beschlaegeColor}`}
                                   </span></li>
-                                  <li>• Anschlagsart: <span className="text-foreground font-medium">{anschlagsart || "—"}</span></li>
+                                </>
+                              )}
+                              {beschlaegeMode === "einzelteile" && Object.entries(einzelteileQuantities).filter(([, q]) => q > 0).length > 0 && (
+                                <>
+                                  {Object.entries(einzelteileQuantities).filter(([, q]) => q > 0).map(([name, qty]) => (
+                                    <li key={name}>• {name}: <span className="text-foreground font-medium">{qty} Stk.</span></li>
+                                  ))}
                                 </>
                               )}
                             </ul>
