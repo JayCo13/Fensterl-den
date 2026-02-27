@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calculator, Loader2, Send, X, Info, Eye } from "lucide-react";
+import { Calculator, Loader2, Send, X, Info, Eye, Palette } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import beschlaegeVerzinkt from "@/assets/standar-verzinkt-konfigurator-blank.jpg";
@@ -88,6 +88,57 @@ interface ConfiguratorProps {
   onRalColorChange?: (ralColor: string) => void;
 }
 
+const ANSCHLAGARTEN_DATA = [
+  {
+    id: "art-1",
+    title: "Anschlagart 1 – Montage auf Ladenrahmen",
+    image: "/Anschlagart 1 – Montage auf Ladenrahmen - Konfigurator.png",
+    description: "Ein Rahmen ist erforderlich, wenn zwischen Laden und Stock, bzw. Glas, zu wenig Luft für den Verschluss oder für die Zugleiste bei Fig. 5 (bewegliche Brettchen) ist."
+  },
+  {
+    id: "art-2",
+    title: "Anschlagart 2 – Montage in Verkleidung",
+    image: "/Anschlagart 2 – Montage in Verkleidung - Konfigurator.png",
+    description: "Als Kloben sind Plattenkloben sowie Schraubkloben mit Holzoder M-Gewinde möglich. Wenn möglich bei der Bestellung Verkleidungs- und Ladenstärke angeben."
+  },
+  {
+    id: "art-3",
+    title: "Anschlagart 3 – Montage direkt auf Stock",
+    image: "/Anschlagart 3 – Montage direkt auf Stock - Konfigurator.png",
+    description: "Achtung: Achten Sie darauf, dass die Klobenschrauben nicht in den Falz des Fensters kommen. Bei Fig. 4 nur 10 mm Auflage, da Brettchen vorstehen und dadurch mit dem Band in Berührung kommen. Bei der Bestellung ist die Austragung anzugeben."
+  },
+  {
+    id: "art-3-1",
+    title: "Anschlagart 3.1 – Montage direkt auf Stock (mit Distanz)",
+    image: "/Anschlagart 3.1 – Montage direkt auf Stock - Konfigurator.png",
+    description: "Achtung: Achten Sie darauf, dass die Klobenschrauben nicht in den Falz des Fensters kommen. Bei Fig. 4 nur 10 mm Auflage, da Brettchen vorstehen und dadurch mit dem Band in Berührung kommen. Bei der Bestellung ist die Austragung anzugeben."
+  },
+  {
+    id: "art-4",
+    title: "Anschlagart 4 – Montage in Mauerfalz (Schraubkloben mit Holzgewinde)",
+    image: "/Anschlagart 4 – Montage in Mauerfalz - Konfigurator.png",
+    description: "Auf evtl. Fassadenisolierung achten. Dementsprechend ist die Klobenlänge zu wählen (evtl. auch Einmauerröhrchen, Abb. 5, verwenden)."
+  },
+  {
+    id: "art-4-1",
+    title: "Anschlagart 4.1 – Montage Stumpf, in Laibung (Schraubkloben mit Holzgewinde)",
+    image: "/Anschlagart 4.1 – Montage Stumpf - Konfigurator.png",
+    description: "Maßabnahme: Auf evtl. Fassadenisolierung achten. Dementsprechend ist die Klobenlänge zu wählen (evtl. auch Einmauerröhrchen, Abb. 5, verwenden)."
+  },
+  {
+    id: "art-4-2",
+    title: "Anschlagart 4.2 – Montage auf Mauerwerk (Schraubkloben mit Holzgewinde)",
+    image: "/Anschlagart 4.2 – Montage auf Mauerwerk - Konfigurator.png",
+    description: "Maßabnahme: Auf evtl. Fassadenisolierung achten. Dementsprechend ist die Klobenlänge zu wählen (evtl. auch Einmauerröhrchen, Abb. 5, verwenden)."
+  },
+  {
+    id: "art-5",
+    title: "Anschlagart 5 – Montage auf Mauerwerk (Läden gefalzt)",
+    image: "/Anschlagart 5 – Montage auf Mauerwerk - Konfigurator.png",
+    description: "Maßabnahme Auf evtl. Fassadenisolierung achten. Dementsprechend ist die Klobenlänge zu wählen (evtl. auch Einmauerröhrchen, Abb. 5, verwenden)."
+  }
+];
+
 export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChange, onRalColorChange }: ConfiguratorProps) => {
   const [shutterType, setShutterType] = useState<"klappladen" | "schiebeladen">("klappladen");
   const [material, setMaterial] = useState<MaterialType>("wood");
@@ -113,6 +164,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   const [ausnehmungFiles, setAusnehmungFiles] = useState<File[]>([]);
   const [designDialogOpen, setDesignDialogOpen] = useState<Design | null>(null);
   const [showDesignInfo, setShowDesignInfo] = useState<boolean>(true);
+  const [colorPreviewOpen, setColorPreviewOpen] = useState<boolean>(false);
 
 
   useEffect(() => {
@@ -213,6 +265,70 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   const [anzahlFenster, setAnzahlFenster] = useState<string>("1");
   const [sonderwuensche, setSonderwuensche] = useState<string>("");
 
+  // Per-material state cache — saves/restores selections when switching between wood and aluminum
+  interface MaterialState {
+    selectedDesignId: string;
+    ralColor: string;
+    customRal: string;
+    rohUnbehandelt: boolean;
+    colorSystem: "ral" | "ncs" | "lasur" | "roh";
+    customNcs: string;
+    ncsPreviewColor: string;
+    ausstellerEnabled: boolean;
+    kombinationEnabled: boolean;
+    kombinationDesign1: string;
+    kombinationDesign2: string;
+    kombinationAufteilung: string;
+    ausnehmungEnabled: boolean;
+    ausnehmungText: string;
+    beschlaegeMode: "none" | "anschlagsart" | "einzelteile" | null;
+    beschlaegeColor: string;
+    beschlaegeCustomRal: string;
+    beschlaegeRohUnbehandelt: boolean;
+    anschlagsart: string;
+    montagerahmenMaterial: "" | "aluminium" | "holz";
+    einzelteileQuantities: Record<string, number>;
+    fluegelOption: string;
+    width: string;
+    height: string;
+    anzahlFenster: string;
+    sonderwuensche: string;
+  }
+
+  const defaultMaterialState: MaterialState = {
+    selectedDesignId: "",
+    ralColor: "9016",
+    customRal: "",
+    rohUnbehandelt: false,
+    colorSystem: "ral",
+    customNcs: "",
+    ncsPreviewColor: "#6B8E9B",
+    ausstellerEnabled: false,
+    kombinationEnabled: false,
+    kombinationDesign1: "",
+    kombinationDesign2: "",
+    kombinationAufteilung: "",
+    ausnehmungEnabled: false,
+    ausnehmungText: "",
+    beschlaegeMode: null,
+    beschlaegeColor: "9016",
+    beschlaegeCustomRal: "",
+    beschlaegeRohUnbehandelt: false,
+    anschlagsart: "",
+    montagerahmenMaterial: "",
+    einzelteileQuantities: {},
+    fluegelOption: "",
+    width: "",
+    height: "",
+    anzahlFenster: "1",
+    sonderwuensche: "",
+  };
+
+  const materialStateCache = useRef<Record<string, MaterialState>>({
+    wood: { ...defaultMaterialState },
+    aluminum: { ...defaultMaterialState },
+  });
+
   // Modal state
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -234,11 +350,43 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
 
   const isLoading = woodTypesLoading || designsLoading || ralColorsLoading;
 
-  // Helper: check if selected design is Figur 7 or 7G
-  const selectedDesignNameLower = designs?.find(d => d.id === selectedDesignId)?.name?.toLowerCase() || "";
-  const isFigur7Selected = selectedDesignNameLower.includes("figur 7") && !selectedDesignNameLower.includes("7g");
-  const isFigur7GSelected = selectedDesignNameLower.includes("7g");
+  // Helper: check if selected design is restricted
+  const selectedDesignName = designs?.find(d => d.id === selectedDesignId)?.name || "";
+  const selectedDesignNameLower = selectedDesignName.toLowerCase();
+
+  // For wood: Figur 7 / 7G restrictions
+  const isFigur7Selected = material === "wood" && selectedDesignNameLower.includes("figur 7") && !selectedDesignNameLower.includes("7g");
+  const isFigur7GSelected = material === "wood" && selectedDesignNameLower.includes("7g");
   const isFigur7Or7GSelected = isFigur7Selected || isFigur7GSelected;
+
+  // For aluminium: FLA-2B/8 and FLA-5 Beweglich cannot be combined
+  const isAluminiumNoKombination = material === "aluminum" && (
+    selectedDesignNameLower.includes("fla-2b/8") || selectedDesignNameLower.includes("fla-5")
+  );
+  // For aluminium: only FLA-8 and FLA-GP can have Ausnehmung
+  const isAluminiumAusnehmungAllowed = material === "aluminum" && (
+    selectedDesignNameLower === "fla-8" || selectedDesignNameLower === "fla-gp"
+  );
+  // Combined: is Kombination disabled?
+  const isKombinationDisabled = isFigur7Or7GSelected || isAluminiumNoKombination;
+  // Combined: is Aussteller disabled? (only for wood Figur 7/7G)
+  const isAusstellerDisabled = isFigur7Or7GSelected;
+  // Combined: is Ausnehmung allowed?
+  const isAusnehmungAllowed = isFigur7Or7GSelected || isAluminiumAusnehmungAllowed;
+
+  // Aluminium image mapping
+  const ALUMINUM_IMAGE_MAP: Record<string, { preview: string; details: string }> = {
+    "FLA-2": { preview: "/aluminum-images/Aluminium-FLA2-preview.png", details: "/aluminum-images/Aluminium-FLA2.png" },
+    "FLA-2B": { preview: "/aluminum-images/Aluminium-FLA2B-preview.png", details: "/aluminum-images/Aluminium-FLA2B.png" },
+    "FLA-2B/8": { preview: "/aluminum-images/Aluminium-FLA2B-8-preview.png", details: "/aluminum-images/Aluminium-FLA2B-8.png" },
+    "FLA-2B Beweglich": { preview: "/aluminum-images/Aluminium-FLA2B beweglich-preview.png", details: "/aluminum-images/Aluminium-FLA2B beweglich.png" },
+    "FLA-4": { preview: "/aluminum-images/Aluminium-FLA4-preview.png", details: "/aluminum-images/Aluminium-FLA4.png" },
+    "FLA-5 Beweglich": { preview: "/aluminum-images/Aluminium-FLA5 beweglich-preview.png", details: "/aluminum-images/Aluminium-FLA5 beweglich.png" },
+    "FLA-6": { preview: "/aluminum-images/Aluminium-FLA6-preview.png", details: "/aluminum-images/Aluminium-FLA6.png" },
+    "FLA-8": { preview: "/aluminum-images/Aluminium-FLA8-preview.png", details: "/aluminum-images/Aluminium-FLA8.png" },
+    "FLA-GP": { preview: "/aluminum-images/Aluminium-FLA-GP-preview.png", details: "/aluminum-images/Aluminium-FLA-GP.png" },
+    "FLA-LP": { preview: "/aluminum-images/Aluminium-FLA-LP-preview.png", details: "/aluminum-images/Aluminium-FLA-LP.png" },
+  };
 
   // Image helpers
   const getWoodImage = (woodName: string) => {
@@ -250,13 +398,85 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
     return "/configurator-assets/Holz Fensterladen.png";
   };
 
-  const getDesignImage = (designName: string, material: MaterialType) => {
+  const getDesignImage = (designName: string, mat: MaterialType) => {
+    if (mat === "aluminum" && ALUMINUM_IMAGE_MAP[designName]) {
+      return ALUMINUM_IMAGE_MAP[designName].preview;
+    }
     return `/configurator-assets/${designName} - preview.png`;
   };
 
-  const getDesignDetailsImage = (designName: string, material: MaterialType) => {
+  const getDesignDetailsImage = (designName: string, mat: MaterialType) => {
+    if (mat === "aluminum" && ALUMINUM_IMAGE_MAP[designName]) {
+      return ALUMINUM_IMAGE_MAP[designName].details;
+    }
     return `/configurator-assets/${designName} - details.png`;
   };
+
+  const getDesignPreviewBW = (designName: string) => {
+    if (material === "aluminum") {
+      const aluBWMap: Record<string, string> = {
+        "FLA-2": "/color-preview-images/Aluminium-preview-sw-Figur-FLA2.png",
+        "FLA-2B": "/color-preview-images/Aluminium-preview-sw-Figur-FLA2B.png",
+        "FLA-2B/8": "/color-preview-images/Aluminium-preview-sw-Figur-FLA2B-8.png",
+        "FLA-2B Beweglich": "/color-preview-images/Aluminium-preview-sw-Figur-FLA2B-beweglich.png",
+        "FLA-4": "/color-preview-images/Aluminium-preview-sw-Figur-FLA4.png",
+        "FLA-5 Beweglich": "/color-preview-images/Aluminium-preview-sw-Figur-FLA5 beweglich.png",
+        "FLA-6": "/color-preview-images/Aluminium-preview-sw-Figur-FLA6.png",
+        "FLA-8": "/color-preview-images/Aluminium-preview-sw-Figur-FLA8.png",
+        "FLA-GP": "/color-preview-images/Aluminium-preview-sw-Figur-FLA-GP.png",
+        "FLA-LP": "/color-preview-images/Aluminium-preview-sw-Figur-FLA-LP.png",
+      };
+      return aluBWMap[designName] || `/configurator-assets/${designName} - preview-bw.png`;
+    }
+    // Wood: "Figur 1" → "Holz-preview-sw-Figur-1.png"
+    const woodBWMap: Record<string, string> = {
+      "Figur 1": "/color-preview-images/Holz-preview-sw-Figur-1.png",
+      "Figur 2": "/color-preview-images/Holz-preview-sw-Figur-2.png",
+      "Figur 2B": "/color-preview-images/Holz-preview-sw-Figur-2b.png",
+      "Figur 3": "/color-preview-images/Holz-preview-sw-Figur-3.png",
+      "Figur 4": "/color-preview-images/Holz-preview-sw-Figur-4.png",
+      "Figur 5": "/color-preview-images/Holz-preview-sw-Figur-5.png",
+      "Figur 6": "/color-preview-images/Holz-preview-sw-Figur-6.png",
+      "Figur 7": "/color-preview-images/Holz-preview-sw-Figur-7.png",
+      "Figur 7G": "/color-preview-images/Holz-preview-sw-Figur-7g.png",
+      "Figur 8": "/color-preview-images/Holz-preview-sw-Figur-8.png",
+      "Figur 9": "/color-preview-images/Holz-preview-sw-Figur-9.png",
+    };
+    return woodBWMap[designName] || `/configurator-assets/${designName} - preview-bw.png`;
+  };
+
+  const getDesignDetailsBW = (designName: string) => {
+    if (material === "aluminum") {
+      const aluDetailsBWMap: Record<string, string> = {
+        "FLA-2": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA2.png",
+        "FLA-2B": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA2B.png",
+        "FLA-2B/8": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA2B-8.png",
+        "FLA-2B Beweglich": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA2B-beweglich.png",
+        "FLA-4": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA4.png",
+        "FLA-5 Beweglich": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA5-beweglich.png",
+        "FLA-6": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA6.png",
+        "FLA-8": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA8.png",
+        "FLA-GP": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA-GP.png",
+        "FLA-LP": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA-LP.png",
+      };
+      return aluDetailsBWMap[designName] || `/configurator-assets/${designName} - details.png`;
+    }
+    const woodDetailsBWMap: Record<string, string> = {
+      "Figur 1": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-1.png",
+      "Figur 2": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-2.png",
+      "Figur 2B": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-2B.png",
+      "Figur 3": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-3.png",
+      "Figur 4": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-4.png",
+      "Figur 5": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-5.png",
+      "Figur 6": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-6.png",
+      "Figur 7": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-7.png",
+      "Figur 7G": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-7G.png",
+      "Figur 8": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-8.png",
+      "Figur 9": "/wgbriefingbeschlge/Holz-ganz-sw-Figur-9.png",
+    };
+    return woodDetailsBWMap[designName] || `/configurator-assets/${designName} - details.png`;
+  };
+
   // Set initial selections when data loads
   useEffect(() => {
     if (woodTypes && woodTypes.length > 0 && !selectedWoodTypeId) {
@@ -299,17 +519,73 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   // Check if Aussteller and Figurkombination are available for the selected design
   // They are NOT available for Figur 7 and Figur 7G
   const isAusstellerAndKombinationDisabled = () => {
+    if (material === "aluminum") return false; // aluminium: Aussteller always allowed
     const designName = selectedDesignData?.name?.toLowerCase() || "";
     return designName.includes("figur 7") || designName.includes("figur 7g") ||
       designName === "7" || designName === "7g";
   };
 
   const handleMaterialChange = (newMaterial: MaterialType) => {
+    // Save current material state to cache
+    materialStateCache.current[material] = {
+      selectedDesignId,
+      ralColor,
+      customRal,
+      rohUnbehandelt,
+      colorSystem,
+      customNcs,
+      ncsPreviewColor,
+      ausstellerEnabled,
+      kombinationEnabled,
+      kombinationDesign1,
+      kombinationDesign2,
+      kombinationAufteilung,
+      ausnehmungEnabled,
+      ausnehmungText,
+      beschlaegeMode,
+      beschlaegeColor,
+      beschlaegeCustomRal,
+      beschlaegeRohUnbehandelt,
+      anschlagsart,
+      montagerahmenMaterial,
+      einzelteileQuantities,
+      fluegelOption,
+      width,
+      height,
+      anzahlFenster,
+      sonderwuensche,
+    };
+
+    // Restore cached state for the new material
+    const cached = materialStateCache.current[newMaterial];
     setMaterial(newMaterial);
-    setSelectedDesignId("");
-    setAusstellerEnabled(false);
-    setKombinationDesign1("");
-    setKombinationDesign2("");
+    setSelectedDesignId(cached.selectedDesignId);
+    setRalColor(cached.ralColor);
+    setCustomRal(cached.customRal);
+    setRohUnbehandelt(cached.rohUnbehandelt);
+    setColorSystem(cached.colorSystem);
+    setCustomNcs(cached.customNcs);
+    setNcsPreviewColor(cached.ncsPreviewColor);
+    setAusstellerEnabled(cached.ausstellerEnabled);
+    setKombinationEnabled(cached.kombinationEnabled);
+    setKombinationDesign1(cached.kombinationDesign1);
+    setKombinationDesign2(cached.kombinationDesign2);
+    setKombinationAufteilung(cached.kombinationAufteilung);
+    setAusnehmungEnabled(cached.ausnehmungEnabled);
+    setAusnehmungText(cached.ausnehmungText);
+    setAusnehmungFiles([]);
+    setBeschlaegeMode(cached.beschlaegeMode);
+    setBeschlaegeColor(cached.beschlaegeColor);
+    setBeschlaegeCustomRal(cached.beschlaegeCustomRal);
+    setBeschlaegeRohUnbehandelt(cached.beschlaegeRohUnbehandelt);
+    setAnschlagsart(cached.anschlagsart);
+    setMontagerahmenMaterial(cached.montagerahmenMaterial);
+    setEinzelteileQuantities(cached.einzelteileQuantities);
+    setFluegelOption(cached.fluegelOption);
+    setWidth(cached.width);
+    setHeight(cached.height);
+    setAnzahlFenster(cached.anzahlFenster);
+    setSonderwuensche(cached.sonderwuensche);
     onMaterialChange?.(newMaterial);
   };
 
@@ -620,7 +896,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                             className="flex flex-col items-center justify-between rounded-xl border-2 border-transparent bg-muted/40 p-4 md:p-6 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all duration-300 w-full hover:shadow-md hover:border-primary/40 h-full"
                           >
                             <img
-                              src="/configurator-assets/Aluminium Fensterladen.png"
+                              src="/aluminium_material.png"
                               alt="Aluminium"
                               className="w-full h-auto max-h-48 md:max-h-64 object-contain drop-shadow-sm transition-transform duration-500 group-hover:scale-105 mb-4"
                             />
@@ -634,7 +910,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                             className="flex flex-col items-center justify-between rounded-xl border-2 border-transparent bg-muted/40 p-4 md:p-6 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all duration-300 w-full hover:shadow-md hover:border-primary/40 h-full"
                           >
                             <img
-                              src="/configurator-assets/Holz Fensterladen.png"
+                              src="/holz_material.png"
                               alt="Holz"
                               className="w-full h-auto max-h-48 md:max-h-64 object-contain drop-shadow-sm transition-transform duration-500 group-hover:scale-105 mb-4"
                             />
@@ -752,13 +1028,16 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                     }`}
                                   onClick={() => {
                                     if (kombinationEnabled) {
-                                      // Don't allow Figur 7 or 7G in combination
+                                      // Don't allow certain designs in combination
                                       const clickedName = designOption.name.toLowerCase();
-                                      const is7or7G = (clickedName.includes("figur 7") && !clickedName.includes("7g")) || clickedName.includes("7g");
-                                      if (is7or7G) {
+                                      const isWoodExcluded = material === "wood" && ((clickedName.includes("figur 7") && !clickedName.includes("7g")) || clickedName.includes("7g"));
+                                      const isAluExcluded = material === "aluminum" && (clickedName.includes("fla-2b/8") || clickedName.includes("fla-5"));
+                                      if (isWoodExcluded || isAluExcluded) {
                                         toast({
                                           title: "Nicht kombinierbar",
-                                          description: "Figur 7 und 7G können nicht in einer Designkombination verwendet werden.",
+                                          description: material === "aluminum"
+                                            ? "FLA-2B/8 und FLA-5 Beweglich können nicht in einer Designkombination verwendet werden."
+                                            : "Figur 7 und 7G können nicht in einer Designkombination verwendet werden.",
                                         });
                                         return;
                                       }
@@ -853,13 +1132,34 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                     {/* Design Options: Conditional based on Figur 7/7G selection */}
                     <div className="space-y-3 mt-4">
 
-                      {/* A: Designkombination – active for all EXCEPT Figur 7 and 7G */}
-                      <div className={`p-4 rounded-lg border transition-all ${isFigur7Or7GSelected ? 'opacity-50 bg-muted/20 border-muted' : kombinationEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
+                      {/* Reset all design options */}
+                      {(kombinationEnabled || ausstellerEnabled || ausnehmungEnabled) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setKombinationEnabled(false);
+                            setKombinationDesign1("");
+                            setKombinationDesign2("");
+                            setKombinationAufteilung("");
+                            setAusstellerEnabled(false);
+                            setAusnehmungEnabled(false);
+                            setAusnehmungText("");
+                            setAusnehmungFiles([]);
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-destructive/30 bg-destructive/5 hover:bg-destructive/10 text-destructive text-sm font-medium transition-all hover:border-destructive/50"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
+                          Alle Optionen zurücksetzen
+                        </button>
+                      )}
+
+                      {/* A: Designkombination – disabled for restricted designs or if another option is active */}
+                      <div className={`p-4 rounded-lg border transition-all ${isKombinationDisabled || ausstellerEnabled || ausnehmungEnabled ? 'opacity-50 bg-muted/20 border-muted' : kombinationEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
                         <div className="flex items-center space-x-3">
                           <Checkbox
                             id="kombination"
                             checked={kombinationEnabled}
-                            disabled={isFigur7Or7GSelected}
+                            disabled={isKombinationDisabled || ausstellerEnabled || ausnehmungEnabled}
                             onCheckedChange={(checked) => {
                               setKombinationEnabled(checked === true);
                               if (checked) {
@@ -881,8 +1181,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                             <p className="text-xs text-muted-foreground mt-1">
                               Kombinieren Sie verschiedene Designs.
                             </p>
-                            {isFigur7Or7GSelected && (
-                              <p className="text-xs text-destructive/70 mt-1 italic">Nicht verfügbar für Figur 7 / 7G</p>
+                            {isKombinationDisabled && (
+                              <p className="text-xs text-destructive/70 mt-1 italic">
+                                {material === "aluminum" ? "Nicht verfügbar für FLA-2B/8 / FLA-5 Beweglich" : "Nicht verfügbar für Figur 7 / 7G"}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -900,6 +1202,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                     <option value="">Figur wählen...</option>
                                     {designs?.filter(d => {
                                       const n = d.name.toLowerCase();
+                                      if (material === "aluminum") return !n.includes("fla-2b/8") && !n.includes("fla-5");
                                       return !(n.includes("figur 7") && !n.includes("7g")) && !n.includes("7g");
                                     }).map((d) => (
                                       <option key={d.id} value={d.id}>{d.name}</option>
@@ -926,6 +1229,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                     <option value="">Figur wählen...</option>
                                     {designs?.filter(d => {
                                       const n = d.name.toLowerCase();
+                                      if (material === "aluminum") return !n.includes("fla-2b/8") && !n.includes("fla-5");
                                       return !(n.includes("figur 7") && !n.includes("7g")) && !n.includes("7g");
                                     }).map((d) => (
                                       <option key={d.id} value={d.id}>{d.name}</option>
@@ -950,13 +1254,13 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         )}
                       </div>
 
-                      {/* B: Aussteller – active for all EXCEPT Figur 7 and 7G */}
-                      <div className={`p-4 rounded-lg border transition-all ${isFigur7Or7GSelected ? 'opacity-50 bg-muted/20 border-muted' : ausstellerEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
+                      {/* B: Aussteller – disabled if another option is active or wood Figur 7/7G */}
+                      <div className={`p-4 rounded-lg border transition-all ${isAusstellerDisabled || kombinationEnabled || ausnehmungEnabled ? 'opacity-50 bg-muted/20 border-muted' : ausstellerEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
                         <div className="flex items-center space-x-3">
                           <Checkbox
                             id="aussteller"
                             checked={ausstellerEnabled}
-                            disabled={isFigur7Or7GSelected}
+                            disabled={isAusstellerDisabled || kombinationEnabled || ausnehmungEnabled}
                             onCheckedChange={(checked) => setAusstellerEnabled(checked === true)}
                           />
                           <div>
@@ -966,7 +1270,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                             <p className="text-xs text-muted-foreground mt-1">
                               Fensterläden mit Ausstellfunktion
                             </p>
-                            {isFigur7Or7GSelected && (
+                            {isAusstellerDisabled && (
                               <p className="text-xs text-destructive/70 mt-1 italic">Nicht verfügbar für Figur 7 / 7G</p>
                             )}
                           </div>
@@ -984,13 +1288,13 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         )}
                       </div>
 
-                      {/* C: Ausnehmung – ONLY for Figur 7 and 7G */}
-                      <div className={`p-4 rounded-lg border transition-all ${!isFigur7Or7GSelected ? 'opacity-50 bg-muted/20 border-muted' : ausnehmungEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
+                      {/* C: Ausnehmung – disabled if another option is active or design not allowed */}
+                      <div className={`p-4 rounded-lg border transition-all ${!isAusnehmungAllowed || kombinationEnabled || ausstellerEnabled ? 'opacity-50 bg-muted/20 border-muted' : ausnehmungEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
                         <div className="flex items-center space-x-3">
                           <Checkbox
                             id="ausnehmung"
                             checked={ausnehmungEnabled}
-                            disabled={!isFigur7Or7GSelected}
+                            disabled={!isAusnehmungAllowed || kombinationEnabled || ausstellerEnabled}
                             onCheckedChange={(checked) => {
                               setAusnehmungEnabled(checked === true);
                               if (!checked) {
@@ -1006,8 +1310,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                             <p className="text-xs text-muted-foreground mt-1">
                               Individuelle Formen und Ausschnitte im Fensterladen
                             </p>
-                            {!isFigur7Or7GSelected && (
-                              <p className="text-xs text-destructive/70 mt-1 italic">Nur für Figur 7 / 7G verfügbar</p>
+                            {!isAusnehmungAllowed && (
+                              <p className="text-xs text-destructive/70 mt-1 italic">
+                                {material === "aluminum" ? "Nur für FLA-8 / FLA-GP verfügbar" : "Nur für Figur 7 / 7G verfügbar"}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1138,13 +1444,15 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                       >
                         RAL Farben
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => { setColorSystem("ncs"); setRohUnbehandelt(false); }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${colorSystem === "ncs" ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}
-                      >
-                        NCS Farben
-                      </button>
+                      {material === "wood" && (
+                        <button
+                          type="button"
+                          onClick={() => { setColorSystem("ncs"); setRohUnbehandelt(false); }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${colorSystem === "ncs" ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}
+                        >
+                          NCS Farben
+                        </button>
+                      )}
                       {material === "wood" && (
                         <>
                           <button
@@ -1308,7 +1616,19 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                     )}
 
                     {/* Selected Color Info */}
-                    <div className="p-4 bg-muted/50 rounded-lg w-full">
+                    <div className="p-4 bg-muted/50 rounded-lg w-full flex flex-col gap-4">
+                      {/* Preview button */}
+                      {selectedDesignData && colorSystem === "ral" && (displayRal || customRal) && (
+                        <button
+                          type="button"
+                          onClick={() => setColorPreviewOpen(true)}
+                          className="self-start flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium transition-all border border-primary/20 hover:border-primary/40"
+                        >
+                          <Palette className="h-4 w-4" />
+                          Vorschau ansehen
+                        </button>
+                      )}
+
                       <div className="flex items-center gap-3">
                         {colorSystem === "ral" && selectedRalData && !customRal && (
                           <div
@@ -1445,46 +1765,48 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                     </CardHeader>
                     <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
                       <div className="grid grid-cols-1 gap-3">
-                        {[
-                          "Anschlagart 1 – Montage auf Ladenrahmen",
-                          "Anschlagart 2 – Montage in Verkleidung",
-                          "Anschlagart 3 – Montage direkt auf Stock"
-                        ].map((art) => (
+                        {ANSCHLAGARTEN_DATA.map((art) => (
                           <div
-                            key={art}
-                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${anschlagsart === art
+                            key={art.id}
+                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-start gap-3 ${anschlagsart === art.title
                               ? 'border-primary bg-primary/5 shadow-sm'
                               : 'border-muted bg-popover hover:border-primary/50'
                               }`}
                             onClick={() => {
-                              setAnschlagsart(art);
-                              if (!art.includes("Anschlagart 1")) setMontagerahmenMaterial("");
+                              setAnschlagsart(art.title);
+                              if (!art.title.includes("Anschlagart 1")) setMontagerahmenMaterial("");
                             }}
                           >
-                            <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${anschlagsart === art ? 'bg-primary' : 'bg-transparent'}`}>
-                              {anschlagsart === art && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                            <div className={`mt-1 flex-shrink-0 w-4 h-4 rounded-full border border-primary flex items-center justify-center ${anschlagsart === art.title ? 'bg-primary' : 'bg-transparent'}`}>
+                              {anschlagsart === art.title && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
                             </div>
-                            <span className="text-sm md:text-base font-medium">{art}</span>
+                            <div>
+                              <span className="text-sm md:text-base font-medium leading-tight">{art.title}</span>
+                            </div>
                           </div>
                         ))}
                       </div>
 
                       {/* Sketch + Explanation when an option is selected */}
                       {anschlagsart && (
-                        <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border/50 space-y-4 animate-in fade-in slide-in-from-top-1">
-                          {/* Sketch Image */}
-                          <div className="flex flex-col md:flex-row gap-4 items-start">
-                            <div className="w-full md:w-1/3 rounded-lg border border-input bg-white overflow-hidden">
-                              <img
-                                src={`/configurator-assets/Anschlagart 1 – Montage auf Ladenrahmen - Skizze.png`}
-                                alt={`${anschlagsart} Skizze`}
-                                className="w-full h-auto object-contain"
-                              />
-                            </div>
-                            <div className="flex-1 space-y-2">
-                              <p className="text-sm font-semibold text-primary/80">{anschlagsart}</p>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                Ein Rahmen ist erforderlich, wenn zwischen Laden und Stock, bzw. Glas, zu wenig Luft für den Verschluss oder für die Zugleiste bei Designfigur Nr. 5 (bewegliche Brettchen) ist.
+                        <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-1">
+                          <div className="p-4 md:p-6 bg-white rounded-xl border border-border shadow-sm flex flex-col gap-6 items-center text-center">
+                            {/* Sketch Image */}
+                            {ANSCHLAGARTEN_DATA.find(a => a.title === anschlagsart)?.image && (
+                              <div className="w-full shrink-0 rounded-xl border border-input/60 p-4 flex items-center justify-center bg-white max-w-2xl mx-auto">
+                                <img
+                                  src={ANSCHLAGARTEN_DATA.find(a => a.title === anschlagsart)?.image}
+                                  alt={`${anschlagsart} Skizze`}
+                                  className="w-full h-auto max-h-[220px] object-contain mix-blend-multiply"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 space-y-3 w-full max-w-2xl mx-auto text-left">
+                              <h4 className="text-lg md:text-xl font-bold text-red-600 tracking-tight leading-tight">
+                                {anschlagsart}
+                              </h4>
+                              <p className="text-sm md:text-base text-muted-foreground/90 font-medium leading-relaxed whitespace-pre-wrap">
+                                {ANSCHLAGARTEN_DATA.find(a => a.title === anschlagsart)?.description}
                               </p>
                             </div>
                           </div>
@@ -1859,11 +2181,9 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                   <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {[
-                        { value: "beide-seiten", label: "Beide Seiten", desc: "Klappläden auf beiden Seiten des Fensters", img: "/configurator-assets/Fensterladen - beide Seiten.png" },
-                        { value: "nur-links-ganz", label: "Nur links - ganze Breite", desc: "Ein Klappladen links, volle Fensterbreite", img: "/configurator-assets/Fensterladen nur links - ganze Breite.png" },
-                        { value: "nur-rechts-ganz", label: "Nur rechts - ganze Breite", desc: "Ein Klappladen rechts, volle Fensterbreite", img: "/configurator-assets/Fensterladen nur rechts - ganze Breite.png" },
-                        { value: "nur-links-halb", label: "Nur links - halbe Breite", desc: "Ein Klappladen links, halbe Fensterbreite", img: "/configurator-assets/Fensterladen nur links - halbe Breite.png" },
-                        { value: "nur-rechts-halb", label: "Nur rechts - halbe Breite", desc: "Ein Klappladen rechts, halbe Fensterbreite", img: "/configurator-assets/Fensterladen nur rechts - halbe Breite.png" },
+                        { value: "beide-seiten", label: "Zweiteilig - Beide Seiten", desc: "Je nach Fensterbreite drei- oder vierteilig", img: "/configurator-assets/Fensterladen - beide Seiten.png" },
+                        { value: "nur-links-ganz", label: "Einteilig - Klappladen links oder rechts", desc: "Ein Klappladen volle Fensterbreite", img: "/configurator-assets/Fensterladen nur links - ganze Breite.png" },
+                        { value: "nur-links-halb", label: "Zweiteilig gekoppelt – Klappladen links oder rechts", desc: "Zwei Klappläden halbe Fensterbreite", img: "/configurator-assets/Fensterladen nur links - halbe Breite.png" },
                       ].map((option) => (
                         <div
                           key={option.value}
@@ -1906,7 +2226,11 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                   <CardHeader className="p-4 md:p-6">
                     <CardTitle className="text-lg md:text-2xl">9. Sonderwünsche</CardTitle>
                     <CardDescription className="text-sm md:text-base">
-                      Haben Sie besondere Anforderungen, wie zum Beispiel Rahmenmaßänderungen bei Holzfensterläden, andere Holzarten, spezielle Oberflächenbehandlungen, Fensterläden in Sonderformen oder sonstige individuelle Wünsche?
+                      Haben Sie besondere Anforderungen, wie zum Beispiel Rahmenmaßänderungen bei Holzfens-
+                      terläden (z.B. 6cm statt 8cm), andere Holzarten (z.B. Eiche), spezielle Oberflächenbehandlungen
+
+                      (NCS-Farben oder Lasuren), Fensterläden in Sonderformen (z.B. mit Bögen) oder sonstige indivi-
+                      duelle Wünsche?
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
@@ -1993,6 +2317,54 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         <h3 className="text-xl md:text-2xl font-bold mb-5 text-primary text-center md:text-left">
                           Ihre Konfiguration
                         </h3>
+
+                        {/* Visuelle Vorschau */}
+                        <div className="mb-6">
+                          <div className="bg-white p-4 rounded-xl border border-border/60 shadow-sm flex items-center justify-center min-h-[300px] md:min-h-[400px]">
+                            <div className="relative inline-block w-full flex justify-center items-center">
+                              <img
+                                src={getDesignDetailsBW(selectedDesignData?.name || "")}
+                                alt={`${selectedDesignData?.name || ""} Vorschau`}
+                                className="w-auto h-auto max-w-full max-h-[50vh] object-contain drop-shadow-sm"
+                                onError={(e) => { (e.target as HTMLImageElement).src = getDesignDetailsImage(selectedDesignData?.name || "", material); }}
+                              />
+                              <div
+                                className="absolute inset-0 mix-blend-multiply pointer-events-none"
+                                style={(() => {
+                                  const hex = customRal && isValidRalCode(customRal)
+                                    ? (getRalHexColor(customRal) || '')
+                                    : (selectedRalData?.hex_color || '');
+                                  if (!hex) return { backgroundColor: 'transparent' };
+                                  const r = parseInt(hex.slice(1, 3), 16) / 255;
+                                  const g = parseInt(hex.slice(3, 5), 16) / 255;
+                                  const b = parseInt(hex.slice(5, 7), 16) / 255;
+                                  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                                  const opacity = luminance < 0.3 ? 0.9 + luminance : 1;
+
+                                  const imageUrl = getDesignDetailsBW(selectedDesignData?.name || "");
+
+                                  return {
+                                    backgroundColor: hex,
+                                    opacity,
+                                    maskImage: `url('${imageUrl}')`,
+                                    WebkitMaskImage: `url('${imageUrl}')`,
+                                    maskSize: 'contain',
+                                    WebkitMaskSize: 'contain',
+                                    maskPosition: 'center',
+                                    WebkitMaskPosition: 'center',
+                                    maskRepeat: 'no-repeat',
+                                    WebkitMaskRepeat: 'no-repeat'
+                                  };
+                                })()}
+                              />
+                            </div>
+                          </div>
+                          <p className="flex items-center justify-center gap-2 text-sm font-medium text-amber-600 bg-amber-50/60 py-2 px-4 rounded-lg border border-amber-200 mt-4 mx-auto max-w-max text-center">
+                            <Info className="w-4 h-4 shrink-0" />
+                            <span>Die Farbdarstellung kann je nach Bildschirm variieren.</span>
+                          </p>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm md:text-base">
 
                           {/* System & Material */}
@@ -2293,6 +2665,73 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                 />
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Color Preview Dialog */}
+      <Dialog open={colorPreviewOpen} onOpenChange={setColorPreviewOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-0 shadow-2xl rounded-2xl flex flex-col">
+          {/* Header */}
+          <div className="px-5 pt-5 pb-4 border-b border-border/50 shrink-0">
+            <DialogHeader>
+              <DialogTitle className="text-lg md:text-2xl font-bold tracking-tight text-foreground">
+                {selectedDesignData?.name || "Design"} — RAL {displayRal}
+                {selectedRalData && !customRal ? ` ${selectedRalData.name}` : customRal && isValidRalCode(customRal) ? ` ${getRalName(customRal)}` : ""}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
+                Farbvorschau auf Ihrem gewählten Design
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          {/* Preview Image with color overlay on image only */}
+          <div className="p-5 flex-1 flex flex-col items-center justify-center min-h-[300px] md:min-h-[350px]">
+            <div className="max-w-md w-full mx-auto rounded-xl overflow-hidden border border-border/60 shadow-md flex items-center justify-center p-6 md:p-10 bg-white">
+              <div className="relative inline-block">
+                <img
+                  src={getDesignPreviewBW(selectedDesignData?.name || "")}
+                  alt={`${selectedDesignData?.name || ""} Vorschau`}
+                  className="w-auto h-auto max-w-full max-h-[35vh] object-contain drop-shadow-lg"
+                  onError={(e) => { (e.target as HTMLImageElement).src = getDesignImage(selectedDesignData?.name || "", material); }}
+                />
+                <div
+                  className="absolute inset-0 mix-blend-multiply pointer-events-none"
+                  style={(() => {
+                    const hex = customRal && isValidRalCode(customRal)
+                      ? (getRalHexColor(customRal) || '')
+                      : (selectedRalData?.hex_color || '');
+                    if (!hex) return { backgroundColor: 'transparent' };
+                    // Parse hex to RGB and compute perceived luminance
+                    const r = parseInt(hex.slice(1, 3), 16) / 255;
+                    const g = parseInt(hex.slice(3, 5), 16) / 255;
+                    const b = parseInt(hex.slice(5, 7), 16) / 255;
+                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                    // Dark colors (low luminance) get reduced opacity to preserve detail
+                    const opacity = luminance < 0.3 ? 0.9 + luminance : 1;
+
+                    const imageUrl = getDesignPreviewBW(selectedDesignData?.name || "");
+
+                    return {
+                      backgroundColor: hex,
+                      opacity,
+                      maskImage: `url('${imageUrl}')`,
+                      WebkitMaskImage: `url('${imageUrl}')`,
+                      maskSize: 'contain',
+                      WebkitMaskSize: 'contain',
+                      maskPosition: 'center',
+                      WebkitMaskPosition: 'center',
+                      maskRepeat: 'no-repeat',
+                      WebkitMaskRepeat: 'no-repeat'
+                    };
+                  })()}
+                />
+              </div>
+            </div>
+            <p className="flex items-center justify-center gap-2 text-sm font-medium text-amber-600 bg-amber-50/60 py-2 px-4 rounded-lg border border-amber-200 mt-4 mx-auto max-w-max text-center">
+              <Info className="w-4 h-4 shrink-0" />
+              <span>Die Farbdarstellung kann je nach Bildschirm variieren.</span>
+            </p>
           </div>
         </DialogContent>
       </Dialog>

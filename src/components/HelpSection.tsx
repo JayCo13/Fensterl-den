@@ -1,7 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Video, FileText, Phone } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const HelpSection = () => {
+  const { toast } = useToast();
+
   return (
     <section id="hilfe" className="py-16 bg-muted/30">
       <div className="container px-4">
@@ -17,8 +21,11 @@ export const HelpSection = () => {
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           <Card className="shadow-[var(--shadow-elegant)] hover:shadow-xl transition-shadow">
             <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Video className="h-6 w-6 text-primary" />
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Video className="h-6 w-6 text-primary" />
+                </div>
+                <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-xs whitespace-nowrap px-3 py-1">Bald verfügbar</Badge>
               </div>
               <CardTitle>Montage-Video</CardTitle>
               <CardDescription>
@@ -26,21 +33,23 @@ export const HelpSection = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <a
-                href="https://www.youtube.com/watch?v=example"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline font-medium"
+              <button
+                type="button"
+                onClick={() => toast({ title: "Bald verfügbar", description: "Diese Funktion steht in Kürze zur Verfügung." })}
+                className="text-primary hover:underline font-medium bg-transparent border-0 p-0"
               >
                 Video ansehen →
-              </a>
+              </button>
             </CardContent>
           </Card>
 
           <Card className="shadow-[var(--shadow-elegant)] hover:shadow-xl transition-shadow">
             <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <FileText className="h-6 w-6 text-primary" />
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-xs whitespace-nowrap px-3 py-1">Bald verfügbar</Badge>
               </div>
               <CardTitle>Richtig Ausmessen</CardTitle>
               <CardDescription>
@@ -48,12 +57,13 @@ export const HelpSection = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <a
-                href="#"
-                className="text-primary hover:underline font-medium"
+              <button
+                type="button"
+                onClick={() => toast({ title: "Bald verfügbar", description: "Diese Funktion steht in Kürze zur Verfügung." })}
+                className="text-primary hover:underline font-medium bg-transparent border-0 p-0"
               >
                 Anleitung lesen →
-              </a>
+              </button>
             </CardContent>
           </Card>
 
@@ -69,10 +79,10 @@ export const HelpSection = () => {
             </CardHeader>
             <CardContent>
               <p className="font-medium text-primary">
-                +43 (0) 1234 567890
+                +43 55 77 / 85 9 44-0
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Mo-Fr: 8:00 - 17:00 Uhr
+                info@blank.at
               </p>
             </CardContent>
           </Card>

@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LogIn, Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export const Header = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -40,10 +42,14 @@ export const Header = () => {
 
         {/* Desktop Login Button - Right Aligned */}
         <div className="hidden md:flex items-center gap-4">
-          <a href="#partner" className="flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white transition-colors">
+          <button
+            type="button"
+            onClick={() => toast({ title: "Bald verfügbar", description: "Die Partner-Authentifizierung wird in Kürze verfügbar sein." })}
+            className="flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white transition-colors bg-transparent border-0 p-0"
+          >
             <LogIn className="h-4 w-4" />
             <span className="uppercase tracking-wider">Partner Login</span>
-          </a>
+          </button>
         </div>
 
         {/* Mobile Menu Button */}
@@ -92,7 +98,7 @@ export const Header = () => {
               variant="ghost"
               size="sm"
               onClick={() => {
-                navigate('/partner-login');
+                toast({ title: "Bald verfügbar", description: "Die Partner-Authentifizierung wird in Kürze verfügbar sein." });
                 setMobileMenuOpen(false);
               }}
               className="gap-3 justify-start text-white/80 hover:text-white hover:bg-white/10 pl-0"
