@@ -526,66 +526,37 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   };
 
   const handleMaterialChange = (newMaterial: MaterialType) => {
-    // Save current material state to cache
-    materialStateCache.current[material] = {
-      selectedDesignId,
-      ralColor,
-      customRal,
-      rohUnbehandelt,
-      colorSystem,
-      customNcs,
-      ncsPreviewColor,
-      ausstellerEnabled,
-      kombinationEnabled,
-      kombinationDesign1,
-      kombinationDesign2,
-      kombinationAufteilung,
-      ausnehmungEnabled,
-      ausnehmungText,
-      beschlaegeMode,
-      beschlaegeColor,
-      beschlaegeCustomRal,
-      beschlaegeRohUnbehandelt,
-      anschlagsart,
-      montagerahmenMaterial,
-      einzelteileQuantities,
-      fluegelOption,
-      width,
-      height,
-      anzahlFenster,
-      sonderwuensche,
-    };
-
-    // Restore cached state for the new material
-    const cached = materialStateCache.current[newMaterial];
+    // Reset all chosen configs when switching material
     setMaterial(newMaterial);
-    setSelectedDesignId(cached.selectedDesignId);
-    setRalColor(cached.ralColor);
-    setCustomRal(cached.customRal);
-    setRohUnbehandelt(cached.rohUnbehandelt);
-    setColorSystem(cached.colorSystem);
-    setCustomNcs(cached.customNcs);
-    setNcsPreviewColor(cached.ncsPreviewColor);
-    setAusstellerEnabled(cached.ausstellerEnabled);
-    setKombinationEnabled(cached.kombinationEnabled);
-    setKombinationDesign1(cached.kombinationDesign1);
-    setKombinationDesign2(cached.kombinationDesign2);
-    setKombinationAufteilung(cached.kombinationAufteilung);
-    setAusnehmungEnabled(cached.ausnehmungEnabled);
-    setAusnehmungText(cached.ausnehmungText);
+    setSelectedDesignId("");
+    setRalColor("");
+    setCustomRal("");
+    setRohUnbehandelt(false);
+    setColorSystem("ral");
+    setCustomNcs("");
+    setNcsPreviewColor("");
+    setAusstellerEnabled(false);
+    setKombinationEnabled(false);
+    setKombinationDesign1("");
+    setKombinationDesign2("");
+    setKombinationAufteilung("");
+    setAusnehmungEnabled(false);
+    setAusnehmungText("");
     setAusnehmungFiles([]);
-    setBeschlaegeMode(cached.beschlaegeMode);
-    setBeschlaegeColor(cached.beschlaegeColor);
-    setBeschlaegeCustomRal(cached.beschlaegeCustomRal);
-    setBeschlaegeRohUnbehandelt(cached.beschlaegeRohUnbehandelt);
-    setAnschlagsart(cached.anschlagsart);
-    setMontagerahmenMaterial(cached.montagerahmenMaterial);
-    setEinzelteileQuantities(cached.einzelteileQuantities);
-    setFluegelOption(cached.fluegelOption);
-    setWidth(cached.width);
-    setHeight(cached.height);
-    setAnzahlFenster(cached.anzahlFenster);
-    setSonderwuensche(cached.sonderwuensche);
+    setBeschlaegeMode(null);
+    setBeschlaegeColor("");
+    setBeschlaegeCustomRal("");
+    setBeschlaegeRohUnbehandelt(false);
+    setAnschlagsart("");
+    setMontagerahmenMaterial("");
+    setEinzelteileQuantities({});
+    setFluegelOption("");
+    setWidth("");
+    setHeight("");
+    setAnzahlFenster("1");
+    setSonderwuensche("");
+    setUploadedFiles([]);
+    setCalculatedPrice(null);
     onMaterialChange?.(newMaterial);
   };
 
@@ -1153,13 +1124,13 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         </button>
                       )}
 
-                      {/* A: Designkombination – disabled for restricted designs or if another option is active */}
-                      <div className={`p-4 rounded-lg border transition-all ${isKombinationDisabled || ausstellerEnabled || ausnehmungEnabled ? 'opacity-50 bg-muted/20 border-muted' : kombinationEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
+                      {/* A: Designkombination – for Holz: only disabled for 7/7G; for Aluminum: only blocked by Ausnehmung (except FLA-8/GP which allow all three) */}
+                      <div className={`p-4 rounded-lg border transition-all ${isKombinationDisabled || (material === "aluminum" && !isAluminiumAusnehmungAllowed && ausnehmungEnabled) ? 'opacity-50 bg-muted/20 border-muted' : kombinationEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
                         <div className="flex items-center space-x-3">
                           <Checkbox
                             id="kombination"
                             checked={kombinationEnabled}
-                            disabled={isKombinationDisabled || ausstellerEnabled || ausnehmungEnabled}
+                            disabled={isKombinationDisabled || (material === "aluminum" && !isAluminiumAusnehmungAllowed && ausnehmungEnabled)}
                             onCheckedChange={(checked) => {
                               setKombinationEnabled(checked === true);
                               if (checked) {
@@ -1254,13 +1225,13 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         )}
                       </div>
 
-                      {/* B: Aussteller – disabled if another option is active or wood Figur 7/7G */}
-                      <div className={`p-4 rounded-lg border transition-all ${isAusstellerDisabled || kombinationEnabled || ausnehmungEnabled ? 'opacity-50 bg-muted/20 border-muted' : ausstellerEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
+                      {/* B: Aussteller – for Holz: disabled for 7/7G; for Aluminum: only blocked by Ausnehmung (except FLA-8/GP) */}
+                      <div className={`p-4 rounded-lg border transition-all ${isAusstellerDisabled || (material === "aluminum" && !isAluminiumAusnehmungAllowed && ausnehmungEnabled) ? 'opacity-50 bg-muted/20 border-muted' : ausstellerEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
                         <div className="flex items-center space-x-3">
                           <Checkbox
                             id="aussteller"
                             checked={ausstellerEnabled}
-                            disabled={isAusstellerDisabled || kombinationEnabled || ausnehmungEnabled}
+                            disabled={isAusstellerDisabled || (material === "aluminum" && !isAluminiumAusnehmungAllowed && ausnehmungEnabled)}
                             onCheckedChange={(checked) => setAusstellerEnabled(checked === true)}
                           />
                           <div>
@@ -1288,13 +1259,13 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         )}
                       </div>
 
-                      {/* C: Ausnehmung – disabled if another option is active or design not allowed */}
-                      <div className={`p-4 rounded-lg border transition-all ${!isAusnehmungAllowed || kombinationEnabled || ausstellerEnabled ? 'opacity-50 bg-muted/20 border-muted' : ausnehmungEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
+                      {/* C: Ausnehmung – for Holz: only for 7/7G; for Aluminum: FLA-8/GP allow all three, others are mutually exclusive */}
+                      <div className={`p-4 rounded-lg border transition-all ${!isAusnehmungAllowed || (material === "aluminum" && !isAluminiumAusnehmungAllowed && (kombinationEnabled || ausstellerEnabled)) ? 'opacity-50 bg-muted/20 border-muted' : ausnehmungEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
                         <div className="flex items-center space-x-3">
                           <Checkbox
                             id="ausnehmung"
                             checked={ausnehmungEnabled}
-                            disabled={!isAusnehmungAllowed || kombinationEnabled || ausstellerEnabled}
+                            disabled={!isAusnehmungAllowed || (material === "aluminum" && !isAluminiumAusnehmungAllowed && (kombinationEnabled || ausstellerEnabled))}
                             onCheckedChange={(checked) => {
                               setAusnehmungEnabled(checked === true);
                               if (!checked) {
@@ -2483,10 +2454,48 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         </div>
 
                         {/* Sonderwünsche */}
-                        {sonderwuensche && (
-                          <div className="mt-4 bg-background/50 p-3 rounded">
+                        {(sonderwuensche || uploadedFiles.length > 0) && (
+                          <div className="mt-4 bg-background/50 p-3 rounded space-y-3">
                             <p className="font-semibold mb-2 text-primary/80">Sonderwünsche</p>
-                            <p className="text-sm text-muted-foreground">{sonderwuensche}</p>
+                            {sonderwuensche && (
+                              <p className="text-sm text-muted-foreground">{sonderwuensche}</p>
+                            )}
+                            {uploadedFiles.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Hochgeladene Dateien</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                  {uploadedFiles.map((file, index) => {
+                                    const isImage = file.type.startsWith("image/");
+                                    const previewUrl = isImage ? URL.createObjectURL(file) : null;
+                                    return (
+                                      <div key={index} className="group relative rounded-lg border border-border/60 overflow-hidden bg-white shadow-sm">
+                                        {isImage && previewUrl ? (
+                                          <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                            <img
+                                              src={previewUrl}
+                                              alt={file.name}
+                                              className="w-full h-24 sm:h-32 object-cover transition-transform group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                              <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                                            </div>
+                                          </a>
+                                        ) : (
+                                          <div className="flex flex-col items-center justify-center h-24 sm:h-32 p-2 text-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground mb-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                                            <span className="text-xs text-muted-foreground truncate max-w-full">{file.name}</span>
+                                          </div>
+                                        )}
+                                        <div className="px-2 py-1.5 border-t border-border/40 bg-muted/30">
+                                          <p className="text-[10px] text-muted-foreground truncate">{file.name}</p>
+                                          <p className="text-[10px] text-muted-foreground/60">{(file.size / 1024).toFixed(0)} KB</p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
 
