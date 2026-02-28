@@ -359,9 +359,9 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   const isFigur7GSelected = material === "wood" && selectedDesignNameLower.includes("7g");
   const isFigur7Or7GSelected = isFigur7Selected || isFigur7GSelected;
 
-  // For aluminium: FLA-2B/8 and FLA-5 Beweglich cannot be combined
+  // For aluminium: FLA-2B Beweglich and FLA-5 Beweglich cannot be combined
   const isAluminiumNoKombination = material === "aluminum" && (
-    selectedDesignNameLower.includes("fla-2b/8") || selectedDesignNameLower.includes("fla-5")
+    selectedDesignNameLower.includes("fla-2b beweglich") || selectedDesignNameLower.includes("fla-5")
   );
   // For aluminium: only FLA-8 and FLA-GP can have Ausnehmung
   const isAluminiumAusnehmungAllowed = material === "aluminum" && (
@@ -1002,12 +1002,12 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                       // Don't allow certain designs in combination
                                       const clickedName = designOption.name.toLowerCase();
                                       const isWoodExcluded = material === "wood" && ((clickedName.includes("figur 7") && !clickedName.includes("7g")) || clickedName.includes("7g"));
-                                      const isAluExcluded = material === "aluminum" && (clickedName.includes("fla-2b/8") || clickedName.includes("fla-5"));
+                                      const isAluExcluded = material === "aluminum" && (clickedName.includes("fla-2b beweglich") || clickedName.includes("fla-5"));
                                       if (isWoodExcluded || isAluExcluded) {
                                         toast({
                                           title: "Nicht kombinierbar",
                                           description: material === "aluminum"
-                                            ? "FLA-2B/8 und FLA-5 Beweglich können nicht in einer Designkombination verwendet werden."
+                                            ? "FLA-2B Beweglich und FLA-5 Beweglich können nicht in einer Designkombination verwendet werden."
                                             : "Figur 7 und 7G können nicht in einer Designkombination verwendet werden.",
                                         });
                                         return;
@@ -1154,7 +1154,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                             </p>
                             {isKombinationDisabled && (
                               <p className="text-xs text-destructive/70 mt-1 italic">
-                                {material === "aluminum" ? "Nicht verfügbar für FLA-2B/8 / FLA-5 Beweglich" : "Nicht verfügbar für Figur 7 / 7G"}
+                                {material === "aluminum" ? "Nicht verfügbar für FLA-2B Beweglich / FLA-5 Beweglich" : "Nicht verfügbar für Figur 7 / 7G"}
                               </p>
                             )}
                           </div>
@@ -1173,7 +1173,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                     <option value="">Figur wählen...</option>
                                     {designs?.filter(d => {
                                       const n = d.name.toLowerCase();
-                                      if (material === "aluminum") return !n.includes("fla-2b/8") && !n.includes("fla-5");
+                                      if (material === "aluminum") return !n.includes("fla-2b beweglich") && !n.includes("fla-5");
                                       return !(n.includes("figur 7") && !n.includes("7g")) && !n.includes("7g");
                                     }).map((d) => (
                                       <option key={d.id} value={d.id}>{d.name}</option>
@@ -1200,7 +1200,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                     <option value="">Figur wählen...</option>
                                     {designs?.filter(d => {
                                       const n = d.name.toLowerCase();
-                                      if (material === "aluminum") return !n.includes("fla-2b/8") && !n.includes("fla-5");
+                                      if (material === "aluminum") return !n.includes("fla-2b beweglich") && !n.includes("fla-5");
                                       return !(n.includes("figur 7") && !n.includes("7g")) && !n.includes("7g");
                                     }).map((d) => (
                                       <option key={d.id} value={d.id}>{d.name}</option>
