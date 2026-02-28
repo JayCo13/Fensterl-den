@@ -1587,7 +1587,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                     {/* Selected Color Info */}
                     <div className="p-4 bg-muted/50 rounded-lg w-full flex flex-col gap-4">
                       {/* Preview button */}
-                      {selectedDesignData && colorSystem === "ral" && (displayRal || customRal) && (
+                      {selectedDesignData && ((colorSystem === "ral" && (displayRal || customRal)) || colorSystem === "roh") && (
                         <button
                           type="button"
                           onClick={() => setColorPreviewOpen(true)}
@@ -2743,8 +2743,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           <div className="px-5 pt-5 pb-4 border-b border-border/50 shrink-0">
             <DialogHeader>
               <DialogTitle className="text-lg md:text-2xl font-bold tracking-tight text-foreground">
-                {selectedDesignData?.name || "Design"} — RAL {displayRal}
-                {selectedRalData && !customRal ? ` ${selectedRalData.name}` : customRal && isValidRalCode(customRal) ? ` ${getRalName(customRal)}` : ""}
+                {selectedDesignData?.name || "Design"} {colorSystem === "roh" ? "— Roh/Unbehandelt" : `— RAL ${displayRal}`}
+                {colorSystem !== "roh" && selectedRalData && !customRal ? ` ${selectedRalData.name}` : colorSystem !== "roh" && customRal && isValidRalCode(customRal) ? ` ${getRalName(customRal)}` : ""}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground mt-1">
                 Farbvorschau auf Ihrem gewählten Design
@@ -2757,7 +2757,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
             <div className="max-w-md w-full mx-auto rounded-xl overflow-hidden border border-border/60 shadow-md flex items-center justify-center p-6 md:p-10 bg-white">
               <div className="relative inline-block">
                 <img
-                  src={getDesignPreviewBW(selectedDesignData?.name || "")}
+                  src={colorSystem === "roh" ? getDesignImage(selectedDesignData?.name || "", material) : getDesignPreviewBW(selectedDesignData?.name || "")}
                   alt={`${selectedDesignData?.name || ""} Vorschau`}
                   className="w-auto h-auto max-w-full max-h-[35vh] object-contain drop-shadow-lg"
                   onError={(e) => { (e.target as HTMLImageElement).src = getDesignImage(selectedDesignData?.name || "", material); }}
