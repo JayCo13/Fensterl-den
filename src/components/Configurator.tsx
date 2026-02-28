@@ -586,8 +586,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
       return name.includes("7g") || name === "7g";
     };
 
-    // If Aussteller is enabled, handle combination logic
-    if (ausstellerEnabled) {
+    // Only fill combination slots if the Kombination checkbox is explicitly enabled
+    if (kombinationEnabled) {
       // Check if clicking an already selected design (Deselection Logic)
       if (kombinationDesign1 === designId) {
         // Deselecting #1: Move #2 to #1 if it exists
@@ -633,7 +633,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
       return; // Don't change main selection when adding to combination
     }
 
-    // Normal behavior when Aussteller is not enabled
+    // Normal behavior when Kombination is not enabled
     setSelectedDesignId(designId);
 
     // Auto-reset incompatible options when switching designs
