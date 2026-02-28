@@ -747,7 +747,13 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           // Fenster
           width: parseFloat(width),
           height: parseFloat(height),
-          fluegelOption,
+          fluegelOption: [
+            { value: "beide-seiten", label: "V1: Beide Seiten" },
+            { value: "nur-links-ganz", label: "V2: Nur eine Seite ganz" },
+            { value: "nur-rechts-ganz", label: "V2: Nur eine Seite ganz" },
+            { value: "nur-links-halb", label: "V3: Nur eine Seite halb" },
+            { value: "nur-rechts-halb", label: "V3: Nur eine Seite halb" },
+          ].find(o => o.value === fluegelOption)?.label || fluegelOption,
           anzahlFenster: parseInt(anzahlFenster) || 1,
           // Sonderwünsche
           sonderwuensche: sonderwuensche || undefined,
@@ -944,9 +950,9 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                 <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden">
                   <CardHeader className="p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                     <div>
-                      <CardTitle className="text-lg md:text-2xl">3. Design auswählen</CardTitle>
+                      <CardTitle className="text-lg md:text-2xl">3. Figur auswählen</CardTitle>
                       <CardDescription className="text-sm md:text-base">
-                        Wählen Sie ihr gewünschtes Design
+                        Wählen Sie Ihre gewünschte Figur
                       </CardDescription>
                     </div>
 
@@ -964,7 +970,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                     <div className="px-4 md:px-6 pb-2">
                       <div className="text-red-600 font-bold text-sm md:text-base flex gap-2 items-center">
                         <Eye className="h-5 w-5 shrink-0" />
-                        <p>Für mehr Informationen und technische Zeichnungen, klicken Sie einfach auf das jeweilige Design.</p>
+                        <p>Für mehr Informationen und technische Zeichnungen, klicken Sie einfach auf die jeweilige Figur.</p>
                       </div>
                     </div>
                   )}
@@ -974,7 +980,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                     {/* Design Selection */}
                     <div>
                       <Label className="text-sm font-semibold mb-3 block">
-                        {ausstellerEnabled ? "Referenzdesign auswählen" : "Design auswählen"}
+                        {ausstellerEnabled ? "Referenzfigur auswählen" : "Figur auswählen"}
                       </Label>
                       <ScrollArea id="design-scroll-area" type="always" className="w-full whitespace-nowrap rounded-lg border max-w-full pb-3">
                         <div className="flex gap-3 md:gap-4 p-3 md:p-4 w-max">
@@ -1007,8 +1013,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                         toast({
                                           title: "Nicht kombinierbar",
                                           description: material === "aluminum"
-                                            ? "FLA-2B Beweglich und FLA-5 Beweglich können nicht in einer Designkombination verwendet werden."
-                                            : "Figur 7 und 7G können nicht in einer Designkombination verwendet werden.",
+                                            ? "FLA-2B Beweglich und FLA-5 Beweglich können nicht in einer Figurkombination verwendet werden."
+                                            : "Figur 7 und 7G können nicht in einer Figurkombination verwendet werden.",
                                         });
                                         return;
                                       }
@@ -1147,10 +1153,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                           />
                           <div>
                             <Label htmlFor="kombination" className="text-sm font-semibold cursor-pointer">
-                              Designkombination
+                              Figurkombination
                             </Label>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Kombinieren Sie verschiedene Designs.
+                              Kombinieren Sie verschiedene Figuren.
                             </p>
                             {isKombinationDisabled && (
                               <p className="text-xs text-destructive/70 mt-1 italic">
@@ -1226,7 +1232,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                       </div>
 
                       {/* B: Aussteller – for Holz: disabled for 7/7G; for Aluminum: only blocked by Ausnehmung (except FLA-8/GP) */}
-                      <div className={`p-4 rounded-lg border transition-all ${isAusstellerDisabled || (material === "aluminum" && !isAluminiumAusnehmungAllowed && ausnehmungEnabled) ? 'opacity-50 bg-muted/20 border-muted' : ausstellerEnabled ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted'}`}>
+                      <div className={`p-4 rounded-lg border transition-all ${isAusstellerDisabled || (material === "aluminum" && !isAluminiumAusnehmungAllowed && ausnehmungEnabled) ? 'opacity-50 bg-muted/20 border-muted' : ausstellerEnabled ? 'bg-background border-primary/20' : 'bg-muted/30 border-muted'}`}>
                         <div className="flex items-center space-x-3">
                           <Checkbox
                             id="aussteller"
@@ -1248,11 +1254,11 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         </div>
                         {ausstellerEnabled && (
                           <div className="mt-3 pl-7">
-                            <div className="rounded-lg border border-input bg-white overflow-hidden max-w-[200px]">
+                            <div className="rounded-lg bg-white overflow-hidden max-w-[200px]">
                               <img
                                 src="/configurator-assets/Aussteller.png"
                                 alt="Aussteller Skizze"
-                                className="w-full h-auto object-contain"
+                                className="w-full h-auto object-contain mix-blend-multiply"
                               />
                             </div>
                           </div>
@@ -1418,29 +1424,11 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                       {material === "wood" && (
                         <button
                           type="button"
-                          onClick={() => { setColorSystem("ncs"); setRohUnbehandelt(false); }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${colorSystem === "ncs" ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}
+                          onClick={() => { setColorSystem("roh"); setRohUnbehandelt(true); setRalColor(""); setCustomRal(""); setCustomNcs(""); }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${colorSystem === "roh" ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}
                         >
-                          NCS Farben
+                          Roh / Unbehandelt
                         </button>
-                      )}
-                      {material === "wood" && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => { setColorSystem("lasur"); setRohUnbehandelt(false); setRalColor(""); setCustomRal(""); setCustomNcs(""); }}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${colorSystem === "lasur" ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}
-                          >
-                            Lasur
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setColorSystem("roh"); setRohUnbehandelt(true); setRalColor(""); setCustomRal(""); setCustomNcs(""); }}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${colorSystem === "roh" ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}
-                          >
-                            Roh / Unbehandelt
-                          </button>
-                        </>
                       )}
                     </div>
 
@@ -1498,17 +1486,27 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                 <div>
                                   <p className="font-medium mb-1">RAL Farbkarte ansehen</p>
                                   <p className="text-xs opacity-90 mb-2">
-                                    RAL-Farben sind standardisierte Farbtöne. Sie finden die Farbcodes auf offiziellen RAL-Farbkarten oder online unter:
+                                    RAL-Farben sind standardisierte Farbtöne. Sie können unsere offizielle RAL-Farbkarte hier ansehen, um die Farbcodes zu finden:
                                   </p>
-                                  <a
-                                    href="https://www.ral-farben.de/alle-ral-farben"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 underline"
-                                  >
-                                    www.ral-farben.de
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                                  </a>
+                                  <div className="flex flex-wrap items-center gap-3">
+                                    <a
+                                      href="/RAL_Classic_Farbpalette_BLANK.pdf"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-100/80 text-xs font-semibold text-blue-700 hover:bg-blue-200 hover:text-blue-900 transition-colors"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                      PDF ansehen
+                                    </a>
+                                    <a
+                                      href="/RAL_Classic_Farbpalette_BLANK.pdf"
+                                      download
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors shadow-sm"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+                                      Herunterladen
+                                    </a>
+                                  </div>
                                 </div>
                                 <button
                                   onClick={() => setShowRalInfo(false)}
@@ -1670,8 +1668,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                   </CardHeader>
                   <CardContent className="space-y-6 p-4 md:p-6 pt-0 md:pt-0">
 
-                    {/* 3-Option Selection */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* 2-Option Selection (Einzelteile temporarily hidden) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Nein */}
                       <div
                         className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${beschlaegeMode === "none"
@@ -1694,7 +1692,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         <div className="font-semibold text-lg">Ja</div>
                         <p className="text-xs text-muted-foreground mt-1">Beschläge nach Anschlagsart</p>
                       </div>
-                      {/* Ja — Einzelteile */}
+                      {/* Ja — Einzelteile (Temporarily Hidden) */}
+                      {/* 
                       <div
                         className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${beschlaegeMode === "einzelteile"
                           ? 'border-primary bg-primary/5 shadow-md'
@@ -1705,6 +1704,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         <div className="font-semibold text-lg">Ja</div>
                         <p className="text-xs text-muted-foreground mt-1">Beschläge Einzelteile</p>
                       </div>
+                      */}
                     </div>
 
                     {/* Selection Status */}
@@ -1737,89 +1737,91 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                     <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
                       <div className="grid grid-cols-1 gap-3">
                         {ANSCHLAGARTEN_DATA.map((art) => (
-                          <div
-                            key={art.id}
-                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-start gap-3 ${anschlagsart === art.title
-                              ? 'border-primary bg-primary/5 shadow-sm'
-                              : 'border-muted bg-popover hover:border-primary/50'
-                              }`}
-                            onClick={() => {
-                              setAnschlagsart(art.title);
-                              if (!art.title.includes("Anschlagart 1")) setMontagerahmenMaterial("");
-                            }}
-                          >
-                            <div className={`mt-1 flex-shrink-0 w-4 h-4 rounded-full border border-primary flex items-center justify-center ${anschlagsart === art.title ? 'bg-primary' : 'bg-transparent'}`}>
-                              {anschlagsart === art.title && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                          <div key={art.id} className="flex flex-col gap-3">
+                            <div
+                              className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-start gap-3 ${anschlagsart === art.title
+                                ? 'border-primary bg-primary/5 shadow-sm'
+                                : 'border-muted bg-popover hover:border-primary/50'
+                                }`}
+                              onClick={() => {
+                                setAnschlagsart(art.title);
+                                if (!art.title.includes("Anschlagart 1")) setMontagerahmenMaterial("");
+                              }}
+                            >
+                              <div className={`mt-1 flex-shrink-0 w-4 h-4 rounded-full border border-primary flex items-center justify-center ${anschlagsart === art.title ? 'bg-primary' : 'bg-transparent'}`}>
+                                {anschlagsart === art.title && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                              </div>
+                              <div>
+                                <span className="text-sm md:text-base font-medium leading-tight">{art.title}</span>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-sm md:text-base font-medium leading-tight">{art.title}</span>
-                            </div>
+
+                            {/* Expandable Image + Text popup directly under the selected option */}
+                            {anschlagsart === art.title && (
+                              <div className="mb-2 pl-7 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="p-4 bg-white rounded-xl border border-border shadow-sm flex flex-col gap-4">
+                                  {art.image && (
+                                    <div className="w-full shrink-0 rounded-xl border border-input/50 p-3 flex items-center justify-center bg-white/50 max-w-md mx-auto">
+                                      <img
+                                        src={art.image}
+                                        alt={`${art.title} Skizze`}
+                                        className="w-full h-auto max-h-[200px] object-contain mix-blend-multiply"
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex-1 space-y-2 text-left">
+                                    <h4 className="text-base font-bold text-red-600 tracking-tight">
+                                      {art.title}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground/90 leading-relaxed whitespace-pre-wrap">
+                                      {art.description}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
 
-                      {/* Sketch + Explanation when an option is selected */}
-                      {anschlagsart && (
+                      {/* Montagerahmen sub-option — only for Anschlagart 1 */}
+                      {anschlagsart && anschlagsart.includes("Anschlagart 1") && (
                         <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-1">
-                          <div className="p-4 md:p-6 bg-white rounded-xl border border-border shadow-sm flex flex-col gap-6 items-center text-center">
-                            {/* Sketch Image */}
-                            {ANSCHLAGARTEN_DATA.find(a => a.title === anschlagsart)?.image && (
-                              <div className="w-full shrink-0 rounded-xl border border-input/60 p-4 flex items-center justify-center bg-white max-w-2xl mx-auto">
-                                <img
-                                  src={ANSCHLAGARTEN_DATA.find(a => a.title === anschlagsart)?.image}
-                                  alt={`${anschlagsart} Skizze`}
-                                  className="w-full h-auto max-h-[220px] object-contain mix-blend-multiply"
-                                />
+                          <div className="p-3 rounded-lg border border-border/50 bg-background/50 space-y-3">
+                            <p className="text-sm font-semibold">Montagerahmen gewünscht? <span className="text-muted-foreground font-normal text-xs">(optional)</span></p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div
+                                className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${montagerahmenMaterial === "aluminium"
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-muted bg-popover hover:border-primary/50'
+                                  }`}
+                                onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "aluminium" ? "" : "aluminium")}
+                              >
+                                <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "aluminium" ? 'bg-primary' : 'bg-transparent'}`}>
+                                  {montagerahmenMaterial === "aluminium" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                                </div>
+                                <div>
+                                  <span className="text-sm font-medium">Aluminium</span>
+                                  <span className="text-xs text-muted-foreground ml-1">(40x40mm)</span>
+                                </div>
                               </div>
-                            )}
-                            <div className="flex-1 space-y-3 w-full max-w-2xl mx-auto text-left">
-                              <h4 className="text-lg md:text-xl font-bold text-red-600 tracking-tight leading-tight">
-                                {anschlagsart}
-                              </h4>
-                              <p className="text-sm md:text-base text-muted-foreground/90 font-medium leading-relaxed whitespace-pre-wrap">
-                                {ANSCHLAGARTEN_DATA.find(a => a.title === anschlagsart)?.description}
-                              </p>
+                              <div
+                                className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${montagerahmenMaterial === "holz"
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-muted bg-popover hover:border-primary/50'
+                                  }`}
+                                onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "holz" ? "" : "holz")}
+                              >
+                                <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "holz" ? 'bg-primary' : 'bg-transparent'}`}>
+                                  {montagerahmenMaterial === "holz" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                                </div>
+                                <div>
+                                  <span className="text-sm font-medium">Holz</span>
+                                  <span className="text-xs text-muted-foreground ml-1">(55x30mm)</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
-
-                          {/* Montagerahmen sub-option — only for Anschlagart 1 */}
-                          {anschlagsart.includes("Anschlagart 1") && (
-                            <div className="p-3 rounded-lg border border-border/50 bg-background/50 space-y-3">
-                              <p className="text-sm font-semibold">Montagerahmen gewünscht? <span className="text-muted-foreground font-normal text-xs">(optional)</span></p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div
-                                  className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${montagerahmenMaterial === "aluminium"
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-muted bg-popover hover:border-primary/50'
-                                    }`}
-                                  onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "aluminium" ? "" : "aluminium")}
-                                >
-                                  <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "aluminium" ? 'bg-primary' : 'bg-transparent'}`}>
-                                    {montagerahmenMaterial === "aluminium" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
-                                  </div>
-                                  <div>
-                                    <span className="text-sm font-medium">Aluminium</span>
-                                    <span className="text-xs text-muted-foreground ml-1">(40x40mm)</span>
-                                  </div>
-                                </div>
-                                <div
-                                  className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${montagerahmenMaterial === "holz"
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-muted bg-popover hover:border-primary/50'
-                                    }`}
-                                  onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "holz" ? "" : "holz")}
-                                >
-                                  <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "holz" ? 'bg-primary' : 'bg-transparent'}`}>
-                                    {montagerahmenMaterial === "holz" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
-                                  </div>
-                                  <div>
-                                    <span className="text-sm font-medium">Holz</span>
-                                    <span className="text-xs text-muted-foreground ml-1">(55x30mm)</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       )}
 
@@ -2178,11 +2180,11 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                       <div className="font-semibold">
                         {fluegelOption
                           ? `Gewählt: ${[
-                            { value: "beide-seiten", label: "Beide Seiten" },
-                            { value: "nur-links-ganz", label: "Nur links - ganze Breite" },
-                            { value: "nur-rechts-ganz", label: "Nur rechts - ganze Breite" },
-                            { value: "nur-links-halb", label: "Nur links - halbe Breite" },
-                            { value: "nur-rechts-halb", label: "Nur rechts - halbe Breite" },
+                            { value: "beide-seiten", label: "V1: Beide Seiten" },
+                            { value: "nur-links-ganz", label: "V2: Nur eine Seite ganz" },
+                            { value: "nur-rechts-ganz", label: "V2: Nur eine Seite ganz" },
+                            { value: "nur-links-halb", label: "V3: Nur eine Seite halb" },
+                            { value: "nur-rechts-halb", label: "V3: Nur eine Seite halb" },
                           ].find(o => o.value === fluegelOption)?.label}`
                           : "Bitte wählen Sie eine Flügelanordnung"}
                       </div>
@@ -2330,99 +2332,148 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                               />
                             </div>
                           </div>
-                          <p className="flex items-center justify-center gap-2 text-sm font-medium text-amber-600 bg-amber-50/60 py-2 px-4 rounded-lg border border-amber-200 mt-4 mx-auto max-w-max text-center">
-                            <Info className="w-4 h-4 shrink-0" />
-                            <span>Die Farbdarstellung kann je nach Bildschirm variieren.</span>
-                          </p>
+                          <div className="flex flex-col gap-1 text-sm font-medium text-amber-700 bg-amber-50/60 py-3 px-4 rounded-lg border border-amber-200 mt-4 mx-auto w-full md:max-w-max text-left md:text-center leading-snug">
+                            <span>- Die Farbdarstellung kann je nach Bildschirm variieren.</span>
+                            <span>- Bitte beachten Sie, dass dies nur eine grobe Voransicht ist. Eventuelle Figurkombinationen etc. werden hier nicht angezeigt.</span>
+                          </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm md:text-base">
+                        <div className="grid grid-cols-1 md:grid-cols-2 flex-wrap gap-4 text-sm md:text-base">
 
                           {/* System & Material */}
-                          <div className="bg-background/50 p-3 rounded space-y-1.5">
-                            <p className="font-semibold mb-2 text-primary/80">System & Material</p>
-                            <ul className="space-y-1 text-muted-foreground">
-                              <li>• Systemtyp: <span className="text-foreground font-medium">{shutterType === "klappladen" ? "Klappladen" : shutterType === "schiebeladen" ? "Schiebeladen" : "Falt-Schiebeladen"}</span></li>
-                              <li>• Material: <span className="text-foreground font-medium">{material === "aluminum" ? "Aluminium" : "Holz"}</span></li>
+                          <div className="bg-card p-5 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300 space-y-2">
+                            <h4 className="font-semibold mb-3 text-primary flex items-center gap-2 tracking-tight">System & Material</h4>
+                            <ul className="space-y-2 text-muted-foreground">
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Systemtyp:</span>
+                                <span className="text-foreground font-medium">{shutterType === "klappladen" ? "Klappladen" : shutterType === "schiebeladen" ? "Schiebeladen" : "Falt-Schiebeladen"}</span>
+                              </li>
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Material:</span>
+                                <span className="text-foreground font-medium">{material === "aluminum" ? "Aluminium" : "Holz"}</span>
+                              </li>
                               {material === "wood" && selectedWoodTypeData && (
-                                <li>• Holzart: <span className="text-foreground font-medium">{selectedWoodTypeData.name}</span></li>
+                                <li className="flex gap-2">
+                                  <span className="opacity-70 w-28 shrink-0">Holzart:</span>
+                                  <span className="text-foreground font-medium">{selectedWoodTypeData.name}</span>
+                                </li>
                               )}
                             </ul>
                           </div>
 
-                          {/* Design */}
-                          <div className="bg-background/50 p-3 rounded space-y-1.5">
-                            <p className="font-semibold mb-2 text-primary/80">Design</p>
-                            <ul className="space-y-1 text-muted-foreground">
-                              <li>• Design: <span className="text-foreground font-medium">{selectedDesignData?.name || "—"}</span></li>
+                          {/* Figur */}
+                          <div className="bg-card p-5 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300 space-y-2">
+                            <h4 className="font-semibold mb-3 text-primary flex items-center gap-2 tracking-tight">Figur</h4>
+                            <ul className="space-y-2 text-muted-foreground">
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Figur:</span>
+                                <span className="text-foreground font-medium">{selectedDesignData?.name || "—"}</span>
+                              </li>
                               {kombinationEnabled && (
-                                <li>• Designkombination: <span className="text-foreground font-medium">
-                                  {designs?.find(d => d.id === kombinationDesign1)?.name || "—"} + {designs?.find(d => d.id === kombinationDesign2)?.name || "—"}
-                                </span></li>
+                                <li className="flex gap-2">
+                                  <span className="opacity-70 w-28 shrink-0">Kombination:</span>
+                                  <span className="text-foreground font-medium">
+                                    {designs?.find(d => d.id === kombinationDesign1)?.name || "—"} + {designs?.find(d => d.id === kombinationDesign2)?.name || "—"}
+                                  </span>
+                                </li>
                               )}
                               {kombinationEnabled && kombinationAufteilung && (
-                                <li>• Aufteilung: <span className="text-foreground font-medium">{kombinationAufteilung}</span></li>
+                                <li className="flex gap-2">
+                                  <span className="opacity-70 w-28 shrink-0">Aufteilung:</span>
+                                  <span className="text-foreground font-medium">{kombinationAufteilung}</span>
+                                </li>
                               )}
-                              <li>• Aussteller: <span className="text-foreground font-medium">{ausstellerEnabled ? "Ja" : "Nein"}</span></li>
-                              <li>• Ausnehmung: <span className="text-foreground font-medium">{ausnehmungEnabled ? "Ja" : "Nein"}</span></li>
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Aussteller:</span>
+                                <span className="text-foreground font-medium">{ausstellerEnabled ? "Ja" : "Nein"}</span>
+                              </li>
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Ausnehmung:</span>
+                                <span className="text-foreground font-medium">{ausnehmungEnabled ? "Ja" : "Nein"}</span>
+                              </li>
                               {ausnehmungEnabled && ausnehmungText && (
-                                <li>• Ausnehmung Details: <span className="text-foreground font-medium">{ausnehmungText}</span></li>
+                                <li className="flex gap-2">
+                                  <span className="opacity-70 w-28 shrink-0">Details:</span>
+                                  <span className="text-foreground font-medium break-words">{ausnehmungText}</span>
+                                </li>
                               )}
                             </ul>
                           </div>
 
                           {/* Farbe */}
-                          <div className="bg-background/50 p-3 rounded space-y-1.5">
-                            <p className="font-semibold mb-2 text-primary/80">Farbe</p>
-                            <ul className="space-y-1 text-muted-foreground">
-                              <li className="flex items-center gap-2">
-                                • Farbsystem: <span className="text-foreground font-medium">
+                          <div className="bg-card p-5 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300 space-y-2">
+                            <h4 className="font-semibold mb-3 text-primary flex items-center gap-2 tracking-tight">Farbe</h4>
+                            <ul className="space-y-2 text-muted-foreground">
+                              <li className="flex gap-2 items-center">
+                                <span className="opacity-70 w-28 shrink-0">Farbsystem:</span>
+                                <span className="text-foreground font-medium">
                                   {colorSystem === "ral" ? "RAL" : colorSystem === "ncs" ? "NCS" : colorSystem === "lasur" ? "Lasur" : "Roh / Unbehandelt"}
                                 </span>
                               </li>
                               {colorSystem === "ral" && (
-                                <li className="flex items-center gap-2">
-                                  • Farbcode: <span className="text-foreground font-medium">RAL {displayRal}</span>
-                                  {(selectedRalData || getRalHexColor(customRal)) && (
-                                    <span
-                                      className="inline-block w-4 h-4 rounded border border-border"
-                                      style={{ backgroundColor: selectedRalData?.hex_color || getRalHexColor(customRal) || '#ccc' }}
-                                    />
-                                  )}
+                                <li className="flex gap-2 items-center">
+                                  <span className="opacity-70 w-28 shrink-0">Farbcode:</span>
+                                  <span className="text-foreground font-medium flex items-center gap-2">
+                                    RAL {displayRal}
+                                    {(selectedRalData || getRalHexColor(customRal)) && (
+                                      <span
+                                        className="inline-block w-4 h-4 rounded shadow-sm border border-border/50"
+                                        style={{ backgroundColor: selectedRalData?.hex_color || getRalHexColor(customRal) || '#ccc' }}
+                                      />
+                                    )}
+                                  </span>
                                 </li>
                               )}
                               {colorSystem === "ncs" && customNcs && (
-                                <li className="flex items-center gap-2">
-                                  • Farbcode: <span className="text-foreground font-medium">{customNcs}</span>
-                                  <span
-                                    className="inline-block w-4 h-4 rounded border border-border"
-                                    style={{ backgroundColor: ncsPreviewColor }}
-                                  />
+                                <li className="flex gap-2 items-center">
+                                  <span className="opacity-70 w-28 shrink-0">Farbcode:</span>
+                                  <span className="text-foreground font-medium flex items-center gap-2">
+                                    {customNcs}
+                                    <span
+                                      className="inline-block w-4 h-4 rounded shadow-sm border border-border/50"
+                                      style={{ backgroundColor: ncsPreviewColor }}
+                                    />
+                                  </span>
                                 </li>
                               )}
                             </ul>
                           </div>
 
                           {/* Beschläge */}
-                          <div className="bg-background/50 p-3 rounded space-y-1.5">
-                            <p className="font-semibold mb-2 text-primary/80">Beschläge</p>
-                            <ul className="space-y-1 text-muted-foreground">
-                              <li>• Beschläge: <span className="text-foreground font-medium">{beschlaegeMode === "anschlagsart" ? "Ja – nach Anschlagsart" : beschlaegeMode === "einzelteile" ? "Ja – Einzelteile" : beschlaegeMode === "none" ? "Nein" : "Nicht gewählt"}</span></li>
+                          <div className="bg-card p-5 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300 space-y-2">
+                            <h4 className="font-semibold mb-3 text-primary flex items-center gap-2 tracking-tight">Beschläge</h4>
+                            <ul className="space-y-2 text-muted-foreground">
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Beschläge:</span>
+                                <span className="text-foreground font-medium">{beschlaegeMode === "anschlagsart" ? "Ja – nach Anschlagsart" : beschlaegeMode === "einzelteile" ? "Ja – Einzelteile" : beschlaegeMode === "none" ? "Nein" : "Nicht gewählt"}</span>
+                              </li>
                               {beschlaegeMode === "anschlagsart" && (
                                 <>
-                                  <li>• Anschlagsart: <span className="text-foreground font-medium">{anschlagsart || "—"}</span></li>
+                                  <li className="flex gap-2">
+                                    <span className="opacity-70 w-28 shrink-0">Anschlagsart:</span>
+                                    <span className="text-foreground font-medium">{anschlagsart || "—"}</span>
+                                  </li>
                                   {montagerahmenMaterial && (
-                                    <li>• Montagerahmen: <span className="text-foreground font-medium">{montagerahmenMaterial === "aluminium" ? "Aluminium (40x40mm)" : "Holz (55x30mm)"}</span></li>
+                                    <li className="flex gap-2">
+                                      <span className="opacity-70 w-28 shrink-0">Rahmen:</span>
+                                      <span className="text-foreground font-medium">{montagerahmenMaterial === "aluminium" ? "Aluminium (40x40mm)" : "Holz (55x30mm)"}</span>
+                                    </li>
                                   )}
-                                  <li>• Farbe: <span className="text-foreground font-medium">
-                                    {beschlaegeRohUnbehandelt ? "Standard verzinkt" : `RAL ${beschlaegeCustomRal || beschlaegeColor}`}
-                                  </span></li>
+                                  <li className="flex gap-2">
+                                    <span className="opacity-70 w-28 shrink-0">Farbe:</span>
+                                    <span className="text-foreground font-medium break-words">
+                                      {beschlaegeRohUnbehandelt ? "Standard verzinkt" : `RAL ${beschlaegeCustomRal || beschlaegeColor}`}
+                                    </span>
+                                  </li>
                                 </>
                               )}
                               {beschlaegeMode === "einzelteile" && Object.entries(einzelteileQuantities).filter(([, q]) => q > 0).length > 0 && (
                                 <>
                                   {Object.entries(einzelteileQuantities).filter(([, q]) => q > 0).map(([name, qty]) => (
-                                    <li key={name}>• {name}: <span className="text-foreground font-medium">{qty} Stk.</span></li>
+                                    <li key={name} className="flex gap-2">
+                                      <span className="opacity-70 shrink-0">{name}:</span>
+                                      <span className="text-foreground font-medium ml-auto flex-shrink-0">{qty} Stk.</span>
+                                    </li>
                                   ))}
                                 </>
                               )}
@@ -2430,74 +2481,81 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                           </div>
 
                           {/* Maße & Fenster */}
-                          <div className="bg-background/50 p-3 rounded space-y-1.5">
-                            <p className="font-semibold mb-2 text-primary/80">Maße & Fenster</p>
-                            <ul className="space-y-1 text-muted-foreground">
-                              <li>• Breite: <span className="text-foreground font-medium">{width} mm</span></li>
-                              <li>• Höhe: <span className="text-foreground font-medium">{height} mm</span></li>
-                              <li>• Breite inkl. Rahmen: <span className="text-foreground font-medium">{measurements.totalWidth} mm</span></li>
-                              <li>• Höhe inkl. Rahmen: <span className="text-foreground font-medium">{measurements.totalHeight} mm</span></li>
-                              <li>• Flügel: <span className="text-foreground font-medium">{fluegelOption || "—"}</span></li>
-                              <li>• Anzahl Fenster: <span className="text-foreground font-medium">{anzahlFenster || 1}</span></li>
+                          <div className={`bg-card p-5 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300 space-y-2 ${(sonderwuensche || uploadedFiles.length > 0) ? '' : 'md:col-span-2'}`}>
+                            <h4 className="font-semibold mb-3 text-primary flex items-center gap-2 tracking-tight">Maße & Fenster</h4>
+                            <ul className="space-y-2 text-muted-foreground">
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Breite:</span>
+                                <span className="text-foreground font-medium">{width} mm</span>
+                              </li>
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Höhe:</span>
+                                <span className="text-foreground font-medium">{height} mm</span>
+                              </li>
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Flügel:</span>
+                                <span className="text-foreground font-medium leading-tight">{
+                                  [
+                                    { value: "beide-seiten", label: "V1: Beide Seiten" },
+                                    { value: "nur-links-ganz", label: "V2: Nur eine Seite ganz" },
+                                    { value: "nur-rechts-ganz", label: "V2: Nur eine Seite ganz" },
+                                    { value: "nur-links-halb", label: "V3: Nur eine Seite halb" },
+                                    { value: "nur-rechts-halb", label: "V3: Nur eine Seite halb" },
+                                  ].find(o => o.value === fluegelOption)?.label || fluegelOption || "—"
+                                }</span>
+                              </li>
+                              <li className="flex gap-2">
+                                <span className="opacity-70 w-28 shrink-0">Anzahl Fenster:</span>
+                                <span className="text-foreground font-medium">{anzahlFenster || 1}</span>
+                              </li>
                             </ul>
                           </div>
 
-                          {/* Technische Details */}
-                          <div className="bg-background/50 p-3 rounded space-y-1.5">
-                            <p className="font-semibold mb-2 text-primary/80">Technische Details</p>
-                            <ul className="space-y-1 text-muted-foreground">
-                              <li>• Anzahl Lamellen: <span className="text-foreground font-medium">{measurements.lamellaCount}</span></li>
-                              <li>• Lamellenabstand: <span className="text-foreground font-medium">{measurements.spacing} mm</span></li>
-                              <li>• Rahmenstärke: <span className="text-foreground font-medium">{measurements.frameThickness} mm</span></li>
-                            </ul>
-                          </div>
-                        </div>
+                          {/* Sonderwünsche */}
+                          {(sonderwuensche || uploadedFiles.length > 0) && (
+                            <div className="bg-card p-5 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300 space-y-3">
+                              <h4 className="font-semibold mb-3 text-primary flex items-center gap-2 tracking-tight">Sonderwünsche</h4>
 
-                        {/* Sonderwünsche */}
-                        {(sonderwuensche || uploadedFiles.length > 0) && (
-                          <div className="mt-4 bg-background/50 p-3 rounded space-y-3">
-                            <p className="font-semibold mb-2 text-primary/80">Sonderwünsche</p>
-                            {sonderwuensche && (
-                              <p className="text-sm text-muted-foreground">{sonderwuensche}</p>
-                            )}
-                            {uploadedFiles.length > 0 && (
-                              <div className="space-y-2">
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Hochgeladene Dateien</p>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                  {uploadedFiles.map((file, index) => {
-                                    const isImage = file.type.startsWith("image/");
-                                    const previewUrl = isImage ? URL.createObjectURL(file) : null;
-                                    return (
-                                      <div key={index} className="group relative rounded-lg border border-border/60 overflow-hidden bg-white shadow-sm">
-                                        {isImage && previewUrl ? (
-                                          <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="block">
-                                            <img
-                                              src={previewUrl}
-                                              alt={file.name}
-                                              className="w-full h-24 sm:h-32 object-cover transition-transform group-hover:scale-105"
-                                            />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                              <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                              {sonderwuensche && (
+                                <p className="text-sm text-muted-foreground/90 whitespace-pre-wrap leading-relaxed bg-muted/40 p-3 rounded-lg border border-border/40">{sonderwuensche}</p>
+                              )}
+
+                              {uploadedFiles.length > 0 && (
+                                <div className="space-y-2 pt-2">
+                                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Hochgeladene Dateien</p>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                                    {uploadedFiles.map((file, index) => {
+                                      const isImage = file.type.startsWith("image/");
+                                      const previewUrl = isImage ? URL.createObjectURL(file) : null;
+                                      return (
+                                        <div key={index} className="group relative rounded-md border border-border/60 overflow-hidden bg-muted/30 shadow-sm aspect-square flex flex-col items-center justify-center">
+                                          {isImage && previewUrl ? (
+                                            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full relative">
+                                              <img
+                                                src={previewUrl}
+                                                alt={file.name}
+                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                              />
+                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex flex-col items-center justify-center">
+                                                <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg mb-1" />
+                                                <span className="text-[10px] text-white opacity-0 group-hover:opacity-100 font-medium px-2 truncate w-full text-center">{file.name}</span>
+                                              </div>
+                                            </a>
+                                          ) : (
+                                            <div className="flex flex-col items-center justify-center w-full h-full p-2 text-center bg-transparent">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground mb-1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                                              <span className="text-[10px] text-muted-foreground truncate w-full px-1">{file.name}</span>
                                             </div>
-                                          </a>
-                                        ) : (
-                                          <div className="flex flex-col items-center justify-center h-24 sm:h-32 p-2 text-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground mb-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                                            <span className="text-xs text-muted-foreground truncate max-w-full">{file.name}</span>
-                                          </div>
-                                        )}
-                                        <div className="px-2 py-1.5 border-t border-border/40 bg-muted/30">
-                                          <p className="text-[10px] text-muted-foreground truncate">{file.name}</p>
-                                          <p className="text-[10px] text-muted-foreground/60">{(file.size / 1024).toFixed(0)} KB</p>
+                                          )}
                                         </div>
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                              )}
+                            </div>
+                          )}
+                        </div>
 
                         <Button
                           onClick={() => setShowSubmitModal(true)}
@@ -2642,10 +2700,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
             </p>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Design Details Dialog */}
-      <Dialog open={!!designDialogOpen} onOpenChange={(open) => !open && setDesignDialogOpen(null)}>
+      < Dialog open={!!designDialogOpen} onOpenChange={(open) => !open && setDesignDialogOpen(null)}>
         <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto p-0 border-0 shadow-2xl rounded-2xl flex flex-col">
           {/* Header with gradient accent */}
           <div className="bg-gradient-to-br from-primary/10 via-background to-muted/50 px-5 pt-5 pb-4 border-b border-border/50 shrink-0">
@@ -2653,7 +2711,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
               <DialogTitle className="text-xl md:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
                 {designDialogOpen?.name}
               </DialogTitle>
-              <DialogDescription className="text-sm md:text-base mt-1.5 text-muted-foreground leading-relaxed max-w-2xl line-clamp-2">
+              <DialogDescription className="text-sm md:text-base mt-1.5 text-muted-foreground leading-relaxed max-w-2xl">
                 {designDialogOpen?.description}
               </DialogDescription>
             </DialogHeader>
@@ -2666,7 +2724,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/80"></div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-white/90 backdrop-blur-md px-2.5 py-0.5 rounded-full shadow-sm border border-border/50">Technische Zeichnung</span>
               </div>
-              <div className="flex-1 flex items-center justify-center p-4 pt-10 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] min-h-[300px] md:min-h-[400px]">
+              <div className="flex-1 flex items-center justify-center p-4 pt-10 min-h-[300px] md:min-h-[400px]">
                 <img
                   src={getDesignDetailsImage(designDialogOpen?.name || "", material)}
                   alt={`${designDialogOpen?.name || ""} Details`}
@@ -2676,10 +2734,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Color Preview Dialog */}
-      <Dialog open={colorPreviewOpen} onOpenChange={setColorPreviewOpen}>
+      < Dialog open={colorPreviewOpen} onOpenChange={setColorPreviewOpen} >
         <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-0 shadow-2xl rounded-2xl flex flex-col">
           {/* Header */}
           <div className="px-5 pt-5 pb-4 border-b border-border/50 shrink-0">
@@ -2737,13 +2795,13 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                 />
               </div>
             </div>
-            <p className="flex items-center justify-center gap-2 text-sm font-medium text-amber-600 bg-amber-50/60 py-2 px-4 rounded-lg border border-amber-200 mt-4 mx-auto max-w-max text-center">
-              <Info className="w-4 h-4 shrink-0" />
-              <span>Die Farbdarstellung kann je nach Bildschirm variieren.</span>
-            </p>
+            <div className="flex flex-col gap-1 text-sm font-medium text-amber-700 bg-amber-50/60 py-3 px-4 rounded-lg border border-amber-200 mt-4 mx-auto w-full md:max-w-max text-left md:text-center leading-snug">
+              <span>- Die Farbdarstellung kann je nach Bildschirm variieren.</span>
+              <span>- Bitte beachten Sie, dass dies nur eine grobe Voransicht ist. Eventuelle Figurkombinationen etc. werden hier nicht angezeigt.</span>
+            </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog >
     </>
   );
 };

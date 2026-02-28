@@ -31,9 +31,9 @@ export const ConfiguratorInfo = () => {
                 </div>
               </div>
               <div>
-                <h4 className="font-semibold mb-1">Design auswählen</h4>
+                <h4 className="font-semibold mb-1">Figur auswählen</h4>
                 <p className="text-sm text-muted-foreground">
-                  Wählen Sie aus vielen verschiedenen Designs das passende für Ihr Haus
+                  Wählen Sie aus vielen verschiedenen Figuren die passende für Ihr Haus
                 </p>
               </div>
             </div>
