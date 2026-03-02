@@ -5,7 +5,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calculator, Loader2, Send, X, Info, Eye, Palette } from "lucide-react";
+import { Calculator, Loader2, Send, X, Info, Eye, Palette, ZoomIn } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import beschlaegeVerzinkt from "@/assets/standar-verzinkt-konfigurator-blank.jpg";
@@ -248,6 +248,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
 
   // Beschläge (Hardware) state
   const [beschlaegeMode, setBeschlaegeMode] = useState<"none" | "anschlagsart" | "einzelteile" | null>(null); // null = not selected
+  const [zoomedAnschlagsartImage, setZoomedAnschlagsartImage] = useState<{ src: string, title: string } | null>(null);
   const [beschlaegeColor, setBeschlaegeColor] = useState<string>("9016");
   const [beschlaegeCustomRal, setBeschlaegeCustomRal] = useState<string>("");
   const [beschlaegeRohUnbehandelt, setBeschlaegeRohUnbehandelt] = useState<boolean>(false);
@@ -1759,71 +1760,81 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                             {/* Expandable Image + Text popup directly under the selected option */}
                             {anschlagsart === art.title && (
                               <div className="mb-2 pl-7 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div className="p-4 bg-white rounded-xl border border-border shadow-sm flex flex-col gap-4">
-                                  {art.image && (
-                                    <div className="w-full shrink-0 rounded-xl border border-input/50 p-3 flex items-center justify-center bg-white/50 max-w-md mx-auto">
-                                      <img
-                                        src={art.image}
-                                        alt={`${art.title} Skizze`}
-                                        className="w-full h-auto max-h-[200px] object-contain mix-blend-multiply"
-                                      />
-                                    </div>
-                                  )}
+                                <div className="p-4 bg-white rounded-xl border border-border shadow-sm flex flex-col gap-5">
+                                  {/* Text Section (Moved UP) */}
                                   <div className="flex-1 space-y-2 text-left">
-                                    <h4 className="text-base font-bold text-red-600 tracking-tight">
+                                    <h4 className="text-lg md:text-xl font-bold text-red-600 tracking-tight">
                                       {art.title}
                                     </h4>
-                                    <p className="text-sm text-muted-foreground/90 leading-relaxed whitespace-pre-wrap">
+                                    <p className="text-sm md:text-base text-muted-foreground/90 leading-relaxed whitespace-pre-wrap">
                                       {art.description}
                                     </p>
                                   </div>
+
+                                  {/* Montagerahmen sub-option — only for Anschlagart 1 (Moved UP into the view) */}
+                                  {art.title.includes("Anschlagart 1") && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-1">
+                                      <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+                                        <p className="text-sm font-semibold">Montagerahmen gewünscht? <span className="text-muted-foreground font-normal text-xs">(optional)</span></p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          <div
+                                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 bg-white ${montagerahmenMaterial === "aluminium"
+                                              ? 'border-primary shadow-sm'
+                                              : 'border-muted hover:border-primary/50'
+                                              }`}
+                                            onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "aluminium" ? "" : "aluminium")}
+                                          >
+                                            <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "aluminium" ? 'bg-primary' : 'bg-transparent'}`}>
+                                              {montagerahmenMaterial === "aluminium" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                                            </div>
+                                            <div>
+                                              <span className="text-sm font-medium">Aluminium</span>
+                                              <span className="text-xs text-muted-foreground ml-1">(40x40mm)</span>
+                                            </div>
+                                          </div>
+                                          <div
+                                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 bg-white ${montagerahmenMaterial === "holz"
+                                              ? 'border-primary shadow-sm'
+                                              : 'border-muted hover:border-primary/50'
+                                              }`}
+                                            onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "holz" ? "" : "holz")}
+                                          >
+                                            <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "holz" ? 'bg-primary' : 'bg-transparent'}`}>
+                                              {montagerahmenMaterial === "holz" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                                            </div>
+                                            <div>
+                                              <span className="text-sm font-medium">Holz</span>
+                                              <span className="text-xs text-muted-foreground ml-1">(55x30mm)</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Image Section (Moved DOWN, Made BIGGER) */}
+                                  {art.image && (
+                                    <div
+                                      className="w-full shrink-0 rounded-xl border border-input/50 p-4 flex items-center justify-center bg-white/50 max-w-4xl mx-auto relative group overflow-hidden cursor-pointer"
+                                      onClick={() => setZoomedAnschlagsartImage({ src: art.image, title: art.title })}
+                                    >
+                                      <img
+                                        src={art.image}
+                                        alt={`${art.title} Skizze`}
+                                        className="w-full h-auto max-h-[400px] md:max-h-[500px] object-contain mix-blend-multiply group-hover:scale-[1.02] transition-transform duration-300"
+                                      />
+                                      <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm border border-border shadow-sm px-3 py-2 flex items-center gap-2 rounded-full opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <ZoomIn className="w-4 h-4 text-primary" />
+                                        <span className="text-xs font-semibold text-foreground">Zum Vergrößern klicken</span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
                           </div>
                         ))}
                       </div>
-
-                      {/* Montagerahmen sub-option — only for Anschlagart 1 */}
-                      {anschlagsart && anschlagsart.includes("Anschlagart 1") && (
-                        <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-1">
-                          <div className="p-3 rounded-lg border border-border/50 bg-background/50 space-y-3">
-                            <p className="text-sm font-semibold">Montagerahmen gewünscht? <span className="text-muted-foreground font-normal text-xs">(optional)</span></p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div
-                                className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${montagerahmenMaterial === "aluminium"
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-muted bg-popover hover:border-primary/50'
-                                  }`}
-                                onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "aluminium" ? "" : "aluminium")}
-                              >
-                                <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "aluminium" ? 'bg-primary' : 'bg-transparent'}`}>
-                                  {montagerahmenMaterial === "aluminium" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
-                                </div>
-                                <div>
-                                  <span className="text-sm font-medium">Aluminium</span>
-                                  <span className="text-xs text-muted-foreground ml-1">(40x40mm)</span>
-                                </div>
-                              </div>
-                              <div
-                                className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${montagerahmenMaterial === "holz"
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-muted bg-popover hover:border-primary/50'
-                                  }`}
-                                onClick={() => setMontagerahmenMaterial(montagerahmenMaterial === "holz" ? "" : "holz")}
-                              >
-                                <div className={`w-4 h-4 rounded-full border border-primary flex items-center justify-center flex-shrink-0 ${montagerahmenMaterial === "holz" ? 'bg-primary' : 'bg-transparent'}`}>
-                                  {montagerahmenMaterial === "holz" && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
-                                </div>
-                                <div>
-                                  <span className="text-sm font-medium">Holz</span>
-                                  <span className="text-xs text-muted-foreground ml-1">(55x30mm)</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Selection Status */}
                       <div className="p-4 bg-muted/50 rounded-lg w-full">
@@ -2802,6 +2813,53 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           </div>
         </DialogContent>
       </Dialog >
+
+      {/* Anschlagsart Zoom Image Dialog */}
+      <Dialog open={!!zoomedAnschlagsartImage} onOpenChange={(open) => !open && setZoomedAnschlagsartImage(null)}>
+        <DialogContent className="max-w-5xl w-[90vw] h-[75vh] p-0 bg-white border border-border shadow-2xl rounded-2xl [&>button]:hidden flex flex-col justify-center items-center">
+          <DialogTitle className="sr-only">{zoomedAnschlagsartImage?.title}</DialogTitle>
+
+          {/* Custom Close Button with Red Border */}
+          <div className="absolute top-4 right-4 z-[100]">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full bg-gray-100 hover:bg-gray-200 text-gray-900 shadow-sm border-2 border-red-500 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoomedAnschlagsartImage(null);
+              }}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+
+          <div
+            className="relative w-full h-full p-4 md:p-12 cursor-zoom-in group overflow-hidden flex items-center justify-center"
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = ((e.clientX - rect.left) / rect.width) * 100;
+              const y = ((e.clientY - rect.top) / rect.height) * 100;
+              const img = e.currentTarget.querySelector('img');
+              if (img) {
+                img.style.transformOrigin = `${x}% ${y}%`;
+              }
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center overflow-hidden">
+              <img
+                src={zoomedAnschlagsartImage?.src}
+                alt={zoomedAnschlagsartImage?.title}
+                className="w-auto h-full max-h-[60vh] max-w-full object-contain drop-shadow-sm transition-transform duration-200 ease-out scale-[1.5] group-hover:scale-[1.8]"
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  setZoomedAnschlagsartImage(null);
+                }}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

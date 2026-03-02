@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, Wand2 } from "lucide-react";
@@ -41,6 +42,12 @@ export const ShutterVisualizer = ({ material, designName, woodType, ralColor }: 
   };
 
   const handleVisualize = async () => {
+    toast({
+      title: "Bald verfügbar",
+      description: "Diese Funktion steht in Kürze zur Verfügung.",
+    });
+    return;
+    /*
     if (!originalImage) {
       toast({
         title: "Kein Bild",
@@ -85,6 +92,7 @@ export const ShutterVisualizer = ({ material, designName, woodType, ralColor }: 
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   // Build display text for the configuration
@@ -101,28 +109,13 @@ export const ShutterVisualizer = ({ material, designName, woodType, ralColor }: 
   return (
     <section className="py-16 bg-muted/30">
       <div className="container px-4">
-        <div className="max-w-4xl mx-auto relative group">
-          {/* Shutter effect Overlay for fair mode */}
-          <div className="absolute inset-0 z-50 rounded-xl overflow-hidden cursor-not-allowed group/overlay flex flex-col justify-center items-center shadow-inner">
-            {/* Soft dark glass overlay - gets slightly blurrier on hover */}
-            <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-[1px] transition-all duration-500 group-hover/overlay:bg-slate-900/40 group-hover/overlay:backdrop-blur-[2px]" />
-
-            {/* Thematic Shutter louver pattern effect */}
-            <div
-              className="absolute inset-0 opacity-0 group-hover/overlay:opacity-30 pointer-events-none transition-opacity duration-700 mix-blend-multiply"
-              style={{ backgroundImage: 'repeating-linear-gradient(180deg, transparent, transparent 18px, rgba(0,0,0,0.4) 19px, rgba(0,0,0,0.6) 24px)' }}
-            />
-
-            {/* The Badge */}
-            <div className="relative z-10 bg-white/95 text-slate-800 px-10 py-5 rounded-2xl font-black text-2xl shadow-2xl border-b-4 border-primary/40 transform -rotate-2 flex flex-col items-center gap-1 group-hover/overlay:scale-110 transition-transform duration-500 hover:rotate-0">
-              <span className="text-primary tracking-[0.2em] uppercase text-[10px] font-bold">Innovation in Arbeit</span>
-              <span className="tracking-tight text-3xl">Bald verfügbar</span>
-            </div>
-          </div>
-          {/* Card remains very readable, just slightly muted and unclickable */}
-          <Card className="shadow-[var(--shadow-elegant)] opacity-[0.85] grayscale-[0.2] pointer-events-none select-none transition-all duration-500 group-hover/overlay:opacity-40">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl">Visualisieren Sie Ihre Fensterläden</CardTitle>
+        <div className="max-w-4xl mx-auto">
+          <Card className="shadow-[var(--shadow-elegant)] opacity-[0.85] grayscale-[0.2]">
+            <CardHeader className="text-center relative">
+              <div className="flex justify-end mb-4 md:mb-0 md:absolute md:top-6 md:right-6">
+                <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-xs whitespace-nowrap px-3 py-1">Bald verfügbar</Badge>
+              </div>
+              <CardTitle className="text-3xl md:pr-24">Visualisieren Sie Ihre Fensterläden</CardTitle>
               <CardDescription>
                 Laden Sie ein Foto Ihres Hauses hoch und sehen Sie, wie die ausgewählten Fensterläden aussehen würden
               </CardDescription>
@@ -137,12 +130,14 @@ export const ShutterVisualizer = ({ material, designName, woodType, ralColor }: 
                     accept="image/*"
                     onChange={handleImageUpload}
                     className="hidden"
+                    disabled
                   />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => document.getElementById("house-image")?.click()}
                     className="w-full"
+                    disabled
                   >
                     <Upload className="mr-2 h-5 w-5" />
                     Bild auswählen
