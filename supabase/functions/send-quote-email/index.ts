@@ -11,28 +11,45 @@ const GMAIL_USER = Deno.env.get('GMAIL_USER') || '';
 const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD') || '';
 const RECIPIENT_EMAIL = Deno.env.get('RECIPIENT_EMAIL') || GMAIL_USER;
 
+interface FileAttachment {
+  name: string;
+  type: string;
+  data: string; // base64
+}
+
 interface QuoteRequest {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  customerAddress?: string;
+  customerCompany?: string;
   shutterType: string;
   material: string;
   designName: string;
   woodType?: string;
   ausstellerEnabled?: boolean;
+  kombinationEnabled?: boolean;
   kombinationDesign1?: string;
   kombinationDesign2?: string;
+  kombinationAufteilung?: string;
+  ausnehmungEnabled?: boolean;
+  ausnehmungText?: string;
+  colorSystem?: string;
   ralColor: string;
   rohUnbehandelt?: boolean;
-  beschlaegeEnabled?: boolean | null;
+  customNcs?: string;
+  beschlaegeMode?: string | null;
   beschlaegeColor?: string;
   anschlagsart?: string;
+  montagerahmenMaterial?: string;
+  einzelteile?: Record<string, number>;
   width: number;
   height: number;
   fluegelOption?: string;
   anzahlFenster?: number;
   sonderwuensche?: string;
-  // price: number; // Removed price as per UI update
+  attachments?: FileAttachment[];
+  price?: number | null;
   technicalDetails?: {
     lamellaCount: number;
     spacing: number;
@@ -42,48 +59,66 @@ interface QuoteRequest {
   };
 }
 
-// Map fluegelOption values to German labels
-function getFluegelLabel(option: string): string {
-  const labels: Record<string, string> = {
-    'beide-seiten': 'Beide Seiten',
-    'nur-links-ganz': 'Nur links - ganze Breite',
-    'nur-rechts-ganz': 'Nur rechts - ganze Breite',
-    'nur-links-halb': 'Nur links - halbe Breite',
-    'nur-rechts-halb': 'Nur rechts - halbe Breite',
-  };
-  return labels[option] || option;
-}
-
 function generateEmailHTML(data: QuoteRequest): string {
   const {
     customerName,
     customerEmail,
     customerPhone,
+    customerAddress,
+    customerCompany,
     shutterType,
     material,
     designName,
     woodType,
     ausstellerEnabled,
+    kombinationEnabled,
     kombinationDesign1,
     kombinationDesign2,
+    kombinationAufteilung,
+    ausnehmungEnabled,
+    ausnehmungText,
+    colorSystem,
     ralColor,
-    beschlaegeEnabled,
+    beschlaegeMode,
     beschlaegeColor,
     anschlagsart,
+    montagerahmenMaterial,
+    einzelteile,
     width,
     height,
     fluegelOption,
     anzahlFenster,
     sonderwuensche,
+    attachments,
     technicalDetails,
   } = data;
 
   const brandColor = '#de2525';
 
-  // Format date parts separately to avoid locale errors
+  // Format date
   const now = new Date();
   const dateStr = now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+  // Build Einzelteile list HTML
+  const einzelteileHTML = einzelteile
+    ? Object.entries(einzelteile)
+      .filter(([, qty]) => qty > 0)
+      .map(([name, qty]) => `<div style="font-size: 14px; color: #333; margin-bottom: 4px;">• ${qty}× ${name}</div>`)
+      .join('')
+    : '';
+
+  // Color system label
+  const colorSystemLabel = colorSystem === 'ncs' ? 'NCS'
+    : colorSystem === 'lasur' ? 'Lasur'
+      : colorSystem === 'roh' ? 'Roh / Unbehandelt'
+        : 'RAL';
+
+  // Build the design display — always just show the base design name
+  const designDisplay = designName;
+
+  // Show Design-Optionen box only if any option is active
+  const hasDesignOptions = kombinationEnabled || ausstellerEnabled || ausnehmungEnabled;
 
   return `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -108,6 +143,7 @@ function generateEmailHTML(data: QuoteRequest): string {
     .data-value { color: #1a1a1a; font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 20px; }
     .two-col { width: 100%; }
     .two-col td { width: 50%; vertical-align: top; }
+    .detail-box { background: #f9f9f9; border-radius: 6px; padding: 15px; margin-bottom: 20px; }
     .footer { text-align: center; padding: 30px; color: #999999; font-size: 12px; background-color: #f4f4f7; }
     @media only screen and (max-width: 620px) {
       .content-cell { padding: 25px !important; }
@@ -137,13 +173,35 @@ function generateEmailHTML(data: QuoteRequest): string {
                   <div class="data-value">${customerName}</div>
                 </td>
                 <td>
-                  <span class="data-label">Kontakt</span>
+                  <span class="data-label">E-Mail</span>
                   <div class="data-value">
                     <a href="mailto:${customerEmail}" style="color: #1a1a1a; text-decoration: none; border-bottom: 1px dotted #ccc;">${customerEmail}</a>
-                    ${customerPhone ? `<br><a href="tel:${customerPhone}" style="color: #1a1a1a; text-decoration: none; border-bottom: 1px dotted #ccc;">${customerPhone}</a>` : ''}
                   </div>
                 </td>
               </tr>
+              ${customerPhone ? `
+              <tr>
+                <td>
+                  <span class="data-label">Telefon</span>
+                  <div class="data-value">
+                    <a href="tel:${customerPhone}" style="color: #1a1a1a; text-decoration: none; border-bottom: 1px dotted #ccc;">${customerPhone}</a>
+                  </div>
+                </td>
+                <td></td>
+              </tr>` : ''}
+              ${customerCompany || customerAddress ? `
+              <tr>
+                ${customerCompany ? `
+                <td>
+                  <span class="data-label">Firma</span>
+                  <div class="data-value">${customerCompany}</div>
+                </td>` : '<td></td>'}
+                ${customerAddress ? `
+                <td>
+                  <span class="data-label">Adresse</span>
+                  <div class="data-value" style="font-size: 14px;">${customerAddress}</div>
+                </td>` : '<td></td>'}
+              </tr>` : ''}
             </table>
           </div>
 
@@ -169,30 +227,50 @@ function generateEmailHTML(data: QuoteRequest): string {
             <table class="two-col">
               <tr>
                 <td colspan="2">
-                  <span class="data-label">3. Design</span>
-                  <div class="data-value">
-                    ${ausstellerEnabled && (kombinationDesign1 || kombinationDesign2)
-      ? `Kombination: ${kombinationDesign1 || '?'} + ${kombinationDesign2 || '?'}`
-      : designName}
-                  </div>
+                  <span class="data-label">3. Design (Figur)</span>
+                  <div class="data-value">${designDisplay}</div>
                 </td>
               </tr>
             </table>
 
+            <!-- Design Options — only shown if any option is active -->
+            ${hasDesignOptions ? `
+            <div class="detail-box">
+              <div class="data-label" style="margin-bottom: 10px; color: ${brandColor};">Design-Optionen</div>
+              ${kombinationEnabled ? `
+              <div style="margin-bottom: 8px;">
+                <span style="font-size: 13px; color: #555;">✓ Kombination: ${kombinationDesign1 || '?'} + ${kombinationDesign2 || '?'}</span>
+                ${kombinationAufteilung ? `<br><span style="font-size: 13px; color: #555;">Aufteilung: ${kombinationAufteilung}</span>` : ''}
+              </div>` : ''}
+              ${ausstellerEnabled ? `
+              <div style="margin-bottom: 8px;">
+                <span style="font-size: 13px; color: #555;">✓ Aussteller aktiviert</span>
+              </div>` : ''}
+              ${ausnehmungEnabled ? `
+              <div style="margin-bottom: 8px;">
+                <span style="font-size: 13px; color: #555;">✓ Ausnehmung aktiviert</span>
+                ${ausnehmungText ? `<br><span style="font-size: 13px; color: #777; font-style: italic;">Beschreibung: "${ausnehmungText}"</span>` : ''}
+              </div>` : ''}
+            </div>` : ''}
+
             <!-- 4. Farbe -->
             <table class="two-col">
               <tr>
-                <td colspan="2">
-                  <span class="data-label">4. Farbe / Oberfläche</span>
+                <td>
+                  <span class="data-label">4. Farbsystem</span>
+                  <div class="data-value">${colorSystemLabel}</div>
+                </td>
+                <td>
+                  <span class="data-label">Farbwahl</span>
                   <div class="data-value">${ralColor}</div>
                 </td>
               </tr>
             </table>
 
             <!-- 5. Beschläge -->
-             ${beschlaegeEnabled === true ? `
-            <div style="background: #f9f9f9; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
-              <div class="data-label" style="margin-bottom: 10px; color: ${brandColor};">5. Beschläge & Montage</div>
+            ${beschlaegeMode === 'anschlagsart' ? `
+            <div class="detail-box">
+              <div class="data-label" style="margin-bottom: 10px; color: ${brandColor};">5. Beschläge — Anschlagsart</div>
               <table class="two-col">
                 <tr>
                    <td>
@@ -204,14 +282,31 @@ function generateEmailHTML(data: QuoteRequest): string {
                      <div class="data-value" style="font-size: 15px;">${beschlaegeColor || 'Standard'}</div>
                    </td>
                 </tr>
+                ${montagerahmenMaterial ? `
+                <tr>
+                  <td colspan="2">
+                    <span class="data-label">Montagerahmen</span>
+                    <div class="data-value" style="font-size: 15px;">${montagerahmenMaterial === 'aluminium' ? 'Aluminium' : montagerahmenMaterial === 'holz' ? 'Holz' : montagerahmenMaterial}</div>
+                  </td>
+                </tr>` : ''}
               </table>
+            </div>
+            ` : beschlaegeMode === 'einzelteile' ? `
+            <div class="detail-box">
+              <div class="data-label" style="margin-bottom: 10px; color: ${brandColor};">5. Beschläge — Einzelteile</div>
+              ${einzelteileHTML || '<div style="font-size: 14px; color: #999;">Keine Teile ausgewählt</div>'}
+              ${beschlaegeColor ? `
+              <div style="margin-top: 10px;">
+                <span class="data-label">Beschläge Farbe</span>
+                <div class="data-value" style="font-size: 15px;">${beschlaegeColor}</div>
+              </div>` : ''}
             </div>
             ` : `
             <table class="two-col">
               <tr>
                 <td>
                   <span class="data-label">5. Beschläge</span>
-                  <div class="data-value" style="color: #999;">Keine Beschläge ausgewählt</div>
+                  <div class="data-value" style="color: #999;">${beschlaegeMode === 'none' ? 'Keine Beschläge gewünscht' : 'Nicht ausgewählt'}</div>
                 </td>
               </tr>
             </table>
@@ -233,7 +328,7 @@ function generateEmailHTML(data: QuoteRequest): string {
               <tr>
                 <td colspan="2">
                    <span class="data-label">Flügelanordnung</span>
-                   <div class="data-value" style="margin-bottom: 0;">${fluegelOption ? getFluegelLabel(fluegelOption) : '-'}</div>
+                   <div class="data-value" style="margin-bottom: 0;">${fluegelOption || '-'}</div>
                 </td>
               </tr>
                ${technicalDetails ? `
@@ -253,6 +348,15 @@ function generateEmailHTML(data: QuoteRequest): string {
               <p style="margin: 0; font-style: italic; color: #444; font-size: 14px; line-height: 1.5;">
                 "${sonderwuensche.replace(/\n/g, '<br>')}"
               </p>
+            </div>
+          </div>
+          ` : ''}
+
+          ${attachments && attachments.length > 0 ? `
+          <div class="section">
+            <div class="section-heading">Anhänge</div>
+            <div style="font-size: 14px; color: #555;">
+              ${attachments.map((f: FileAttachment) => `<div style="margin-bottom: 4px;">📎 ${f.name}</div>`).join('')}
             </div>
           </div>
           ` : ''}
@@ -310,17 +414,26 @@ Deno.serve(async (req) => {
 
     // Generate email HTML
     const emailHTML = generateEmailHTML(data);
-    const subject = `Neue Klappladen - Anfrage von ${data.customerName} `;
+    const subject = `Neue Klappladen - Anfrage von ${data.customerName}`;
+
+    // Build nodemailer attachments from base64 files
+    const mailAttachments = data.attachments?.map((file) => ({
+      filename: file.name,
+      content: file.data,
+      encoding: 'base64',
+      contentType: file.type,
+    })) || [];
 
     // Create transporter and send email
     const transporter = createTransporter();
 
     await transporter.sendMail({
-      from: `"Blank Konfigurator" < ${GMAIL_USER}> `,
+      from: `"Blank Konfigurator" <${GMAIL_USER}>`,
       to: RECIPIENT_EMAIL,
       replyTo: data.customerEmail,
       subject: subject,
       html: emailHTML,
+      attachments: mailAttachments,
     });
 
     console.log('Email sent successfully to:', RECIPIENT_EMAIL);

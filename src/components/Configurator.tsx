@@ -718,11 +718,32 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
     setIsSubmitting(true);
 
     try {
+      // Convert files to base64 for email attachment
+      const fileToBase64 = (file: File): Promise<{ name: string; type: string; data: string }> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve({ name: file.name, type: file.type, data: base64 });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      };
+
+      // Gather all files to attach
+      const allFiles = [...uploadedFiles, ...(ausnehmungEnabled ? ausnehmungFiles : [])];
+      const attachmentFiles = allFiles.length > 0
+        ? await Promise.all(allFiles.map(fileToBase64))
+        : undefined;
+
       const response = await supabase.functions.invoke('send-quote-email', {
         body: {
           customerName,
           customerEmail,
           customerPhone: customerPhone || undefined,
+          customerAddress: customerAddress || undefined,
+          customerCompany: customerCompany || undefined,
           // System Typ
           shutterType: shutterType === "klappladen" ? "Klappladen" : shutterType === "schiebeladen" ? "Schiebeladen" : "Falt-Schiebeladen",
           // Material & Design
@@ -731,12 +752,21 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           woodType: material === "wood" ? selectedWoodTypeData?.name : undefined,
           // Aussteller / Kombinationen
           ausstellerEnabled,
-          kombinationDesign1: ausstellerEnabled ? designs?.find(d => d.id === kombinationDesign1)?.name : undefined,
-          kombinationDesign2: ausstellerEnabled ? designs?.find(d => d.id === kombinationDesign2)?.name : undefined,
+          kombinationEnabled,
+          kombinationDesign1: kombinationEnabled ? designs?.find(d => d.id === kombinationDesign1)?.name : undefined,
+          kombinationDesign2: kombinationEnabled ? designs?.find(d => d.id === kombinationDesign2)?.name : undefined,
           kombinationAufteilung: kombinationEnabled && kombinationAufteilung ? kombinationAufteilung : undefined,
+          // Ausnehmung
+          ausnehmungEnabled,
+          ausnehmungText: ausnehmungEnabled ? ausnehmungText : undefined,
           // Farbe
-          ralColor: rohUnbehandelt ? "Roh / Unbehandelt" : `RAL ${displayRal}`,
+          colorSystem,
+          ralColor: colorSystem === "roh" ? "Roh / Unbehandelt"
+            : colorSystem === "ncs" ? `NCS ${customNcs}`
+              : colorSystem === "lasur" ? "Lasur"
+                : `RAL ${displayRal}`,
           rohUnbehandelt,
+          customNcs: colorSystem === "ncs" ? customNcs : undefined,
           // Beschläge
           beschlaegeMode,
           beschlaegeColor: beschlaegeMode && beschlaegeMode !== "none"
@@ -758,6 +788,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           anzahlFenster: parseInt(anzahlFenster) || 1,
           // Sonderwünsche
           sonderwuensche: sonderwuensche || undefined,
+          // Dateien
+          attachments: attachmentFiles,
           // Preis & Details
           price: calculatedPrice,
           technicalDetails: measurements
@@ -777,6 +809,8 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
       setCustomerName("");
       setCustomerEmail("");
       setCustomerPhone("");
+      setCustomerAddress("");
+      setCustomerCompany("");
     } catch (error) {
       console.error("Error sending quote:", error);
       toast({
