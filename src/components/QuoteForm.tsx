@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useSubmitQuoteRequest } from "@/hooks/useConfigurator";
+import { supabase } from "@/integrations/supabase/client";
 
 export const QuoteForm = () => {
   const [name, setName] = useState("");
@@ -15,13 +15,12 @@ export const QuoteForm = () => {
   const [company, setCompany] = useState("");
   const [address, setAddress] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const submitQuote = useSubmitQuoteRequest();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
     if (!name || !email || !message) {
       toast({
         title: "Fehler",
@@ -31,22 +30,29 @@ export const QuoteForm = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      await submitQuote.mutateAsync({
-        name,
-        email,
-        phone: phone || null,
-        company: company || null,
-        address: address || null,
-        message,
+      const response = await supabase.functions.invoke('send-quote-form-email', {
+        body: {
+          name,
+          email,
+          phone: phone || undefined,
+          company: company || undefined,
+          address: address || undefined,
+          message,
+        }
       });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
 
       toast({
         title: "Anfrage gesendet",
         description: "Wir werden uns schnellstmöglich bei Ihnen melden!"
       });
 
-      // Reset form
       setName("");
       setEmail("");
       setPhone("");
@@ -60,6 +66,8 @@ export const QuoteForm = () => {
         description: "Beim Senden ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -84,7 +92,7 @@ export const QuoteForm = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    disabled={submitQuote.isPending}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -97,7 +105,7 @@ export const QuoteForm = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    disabled={submitQuote.isPending}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -109,7 +117,7 @@ export const QuoteForm = () => {
                     placeholder="+43 ..."
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    disabled={submitQuote.isPending}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -120,7 +128,7 @@ export const QuoteForm = () => {
                     placeholder="Firmenname"
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
-                    disabled={submitQuote.isPending}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -131,7 +139,7 @@ export const QuoteForm = () => {
                     placeholder="Straße, PLZ, Ort"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    disabled={submitQuote.isPending}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -144,7 +152,7 @@ export const QuoteForm = () => {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     required
-                    disabled={submitQuote.isPending}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -152,9 +160,9 @@ export const QuoteForm = () => {
                   type="submit"
                   size="lg"
                   className="w-full bg-primary hover:bg-primary/90"
-                  disabled={submitQuote.isPending}
+                  disabled={isSubmitting}
                 >
-                  {submitQuote.isPending ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Wird gesendet...
