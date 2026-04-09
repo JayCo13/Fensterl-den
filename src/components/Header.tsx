@@ -40,7 +40,8 @@ export const Header = () => {
           </a>
         </nav>
 
-        {/* Desktop Login Button - Right Aligned */}
+        {/* Desktop Login Button - Right Aligned (Hidden for now) */}
+        {/*
         <div className="hidden md:flex items-center gap-4">
           <button
             type="button"
@@ -51,6 +52,7 @@ export const Header = () => {
             <span className="uppercase tracking-wider">Partner Login</span>
           </button>
         </div>
+        */}
 
         {/* Mobile Menu Button */}
         <Button
@@ -93,6 +95,7 @@ export const Header = () => {
             >
               Kontakt
             </a>
+            {/* Partner Login (Hidden for now)
             <div className="h-px bg-white/10 my-2" />
             <Button
               variant="ghost"
@@ -106,6 +109,7 @@ export const Header = () => {
               <LogIn className="h-5 w-5" />
               <span className="uppercase tracking-wider">Partner Login</span>
             </Button>
+            */}
           </nav>
         </div>
       )}
