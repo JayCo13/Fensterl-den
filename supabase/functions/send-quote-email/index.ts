@@ -43,6 +43,9 @@ interface QuoteRequest {
   anschlagsart?: string;
   montagerahmenMaterial?: string;
   einzelteile?: Record<string, number>;
+  // Multi-position windows
+  windowPositions?: { fluegelOption: string; anzahlFenster: number; width: number; height: number }[];
+  // Backward compat flat fields
   width: number;
   height: number;
   fluegelOption?: string;
@@ -312,8 +315,33 @@ function generateEmailHTML(data: QuoteRequest): string {
             </table>
             `}
 
-            <!-- Maße & Fenster -->
+            <!-- Abmessungen -->
             <div class="section-heading" style="margin-top: 30px;">Abmessungen</div>
+            ${data.windowPositions && data.windowPositions.length > 0 ? `
+            ${data.windowPositions.map((pos: { fluegelOption: string; anzahlFenster: number; width: number; height: number }, idx: number) => `
+            <div class="detail-box" style="margin-bottom: 15px;">
+              <div class="data-label" style="margin-bottom: 8px; color: ${brandColor};">${data.windowPositions!.length > 1 ? `Position ${idx + 1}` : 'Fenster'}</div>
+              <table class="two-col">
+                <tr>
+                  <td>
+                    <span class="data-label">Fenstermaße (B x H)</span>
+                    <div class="data-value" style="font-size: 15px;">${pos.width} x ${pos.height} mm</div>
+                  </td>
+                  <td>
+                    <span class="data-label">Anzahl Fenster</span>
+                    <div class="data-value" style="font-size: 15px;">${pos.anzahlFenster || 1} Stück</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                     <span class="data-label">Flügelanordnung</span>
+                     <div class="data-value" style="margin-bottom: 0; font-size: 15px;">${pos.fluegelOption || '-'}</div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            `).join('')}
+            ` : `
             <table class="two-col">
               <tr>
                 <td>
@@ -339,6 +367,7 @@ function generateEmailHTML(data: QuoteRequest): string {
                 </td>
               </tr>` : ''}
             </table>
+            `}
           </div>
 
           ${sonderwuensche ? `

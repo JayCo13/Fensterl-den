@@ -101,12 +101,7 @@ const ANSCHLAGARTEN_DATA = [
     image: "/Anschlagart 2 – Montage in Verkleidung - Konfigurator.png",
     description: "Als Kloben sind Plattenkloben sowie Schraubkloben mit Holzoder M-Gewinde möglich. Wenn möglich bei der Bestellung Verkleidungs- und Ladenstärke angeben."
   },
-  {
-    id: "art-3",
-    title: "Anschlagart 3 – Montage direkt auf Stock",
-    image: "/Anschlagart 3 – Montage direkt auf Stock - Konfigurator.png",
-    description: "Achtung: Achten Sie darauf, dass die Klobenschrauben nicht in den Falz des Fensters kommen. Bei Fig. 4 nur 10 mm Auflage, da Brettchen vorstehen und dadurch mit dem Band in Berührung kommen. Bei der Bestellung ist die Austragung anzugeben."
-  },
+
   {
     id: "art-3-1",
     title: "Anschlagart 3.1 – Montage direkt auf Stock (mit Distanz)",
@@ -149,8 +144,6 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   const [customRal, setCustomRal] = useState<string>("");
   const [rohUnbehandelt, setRohUnbehandelt] = useState<boolean>(false);
   const [showRalInfo, setShowRalInfo] = useState<boolean>(false);
-  const [width, setWidth] = useState<string>("");
-  const [height, setHeight] = useState<string>("");
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [measurements, setMeasurements] = useState<any>(null);
 
@@ -263,10 +256,34 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   // Einzelteile state
   const [einzelteileQuantities, setEinzelteileQuantities] = useState<Record<string, number>>({});
 
-  // Flügel (Wings) and additional options
-  const [fluegelOption, setFluegelOption] = useState<string>("");
-  const [anzahlFenster, setAnzahlFenster] = useState<string>("1");
+  // Window positions — multi-position system
+  interface WindowPosition {
+    id: string;
+    fluegelOption: string;
+    anzahlFenster: string;
+    width: string;
+    height: string;
+  }
+  const createNewPosition = (): WindowPosition => ({
+    id: crypto.randomUUID(),
+    fluegelOption: "",
+    anzahlFenster: "1",
+    width: "",
+    height: "",
+  });
+  const [windowPositions, setWindowPositions] = useState<WindowPosition[]>([createNewPosition()]);
   const [sonderwuensche, setSonderwuensche] = useState<string>("");
+
+  // Helper to update a single position field
+  const updatePosition = (positionId: string, field: keyof WindowPosition, value: string) => {
+    setWindowPositions(prev => prev.map(p => p.id === positionId ? { ...p, [field]: value } : p));
+  };
+  const addPosition = () => {
+    setWindowPositions(prev => [...prev, createNewPosition()]);
+  };
+  const removePosition = (positionId: string) => {
+    setWindowPositions(prev => prev.length > 1 ? prev.filter(p => p.id !== positionId) : prev);
+  };
 
   // Per-material state cache — saves/restores selections when switching between wood and aluminum
   interface MaterialState {
@@ -291,10 +308,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
     anschlagsart: string;
     montagerahmenMaterial: "" | "aluminium" | "holz";
     einzelteileQuantities: Record<string, number>;
-    fluegelOption: string;
-    width: string;
-    height: string;
-    anzahlFenster: string;
+    windowPositions: WindowPosition[];
     sonderwuensche: string;
   }
 
@@ -320,10 +334,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
     anschlagsart: "",
     montagerahmenMaterial: "",
     einzelteileQuantities: {},
-    fluegelOption: "",
-    width: "",
-    height: "",
-    anzahlFenster: "1",
+    windowPositions: [createNewPosition()],
     sonderwuensche: "",
   };
 
@@ -390,7 +401,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   const ALUMINUM_IMAGE_MAP: Record<string, { preview: string; details: string }> = {
     "FLA-2": { preview: "/aluminum-images/Aluminium-FLA2-preview.png", details: "/aluminum-images/Aluminium-FLA2.png" },
     "FLA-2B": { preview: "/aluminum-images/Aluminium-FLA2B-preview.png", details: "/aluminum-images/Aluminium-FLA2B.png" },
-    "FLA-2B/8": { preview: "/aluminum-images/Aluminium-FLA2B-8-preview.png", details: "/aluminum-images/Aluminium-FLA2B-8.png" },
+
     "FLA-2B Beweglich": { preview: "/aluminum-images/Aluminium-FLA2B beweglich-preview.png", details: "/aluminum-images/Aluminium-FLA2B beweglich.png" },
     "FLA-4": { preview: "/aluminum-images/Aluminium-FLA4-preview.png", details: "/aluminum-images/Aluminium-FLA4.png" },
     "FLA-5 Beweglich": { preview: "/aluminum-images/Aluminium-FLA5 beweglich-preview.png", details: "/aluminum-images/Aluminium-FLA5 beweglich.png" },
@@ -446,7 +457,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
       const aluBWMap: Record<string, string> = {
         "FLA-2": "/color-preview-images/Aluminium-preview-sw-Figur-FLA2.png",
         "FLA-2B": "/color-preview-images/Aluminium-preview-sw-Figur-FLA2B.png",
-        "FLA-2B/8": "/color-preview-images/Aluminium-preview-sw-Figur-FLA2B-8.png",
+
         "FLA-2B Beweglich": "/color-preview-images/Aluminium-preview-sw-Figur-FLA2B-beweglich.png",
         "FLA-4": "/color-preview-images/Aluminium-preview-sw-Figur-FLA4.png",
         "FLA-5 Beweglich": "/color-preview-images/Aluminium-preview-sw-Figur-FLA5 beweglich.png",
@@ -479,7 +490,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
       const aluDetailsBWMap: Record<string, string> = {
         "FLA-2": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA2.png",
         "FLA-2B": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA2B.png",
-        "FLA-2B/8": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA2B-8.png",
+
         "FLA-2B Beweglich": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA2B-beweglich.png",
         "FLA-4": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA4.png",
         "FLA-5 Beweglich": "/wgbriefingbeschlge/Aluminium-ganz-sw-Figur-FLA5-beweglich.png",
@@ -580,10 +591,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
     setAnschlagsart("");
     setMontagerahmenMaterial("");
     setEinzelteileQuantities({});
-    setFluegelOption("");
-    setWidth("");
-    setHeight("");
-    setAnzahlFenster("1");
+    setWindowPositions([createNewPosition()]);
     setSonderwuensche("");
     setUploadedFiles([]);
     setCalculatedPrice(null);
@@ -686,13 +694,17 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   };
 
   const calculatePrice = () => {
-    const w = parseFloat(width);
-    const h = parseFloat(height);
+    // Validate that at least one position has valid dimensions
+    const hasValidPosition = windowPositions.some(p => {
+      const w = parseFloat(p.width);
+      const h = parseFloat(p.height);
+      return w > 0 && h > 0;
+    });
 
-    if (!w || !h || w <= 0 || h <= 0) {
+    if (!hasValidPosition) {
       toast({
         title: "Ungültige Eingabe",
-        description: "Bitte geben Sie gültige Maße ein.",
+        description: "Bitte geben Sie gültige Maße für mindestens eine Position ein.",
         variant: "destructive"
       });
       return;
@@ -707,6 +719,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
       return;
     }
 
+    // Use first position for indicative pricing
+    const firstPos = windowPositions[0];
+    const w = parseFloat(firstPos.width);
+    const h = parseFloat(firstPos.height);
     const area = (w * h) / 10000;
     let basePrice = selectedDesignData.base_price;
 
@@ -804,17 +820,30 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           anschlagsart: beschlaegeMode === "anschlagsart" ? anschlagsart : undefined,
           montagerahmenMaterial: beschlaegeMode === "anschlagsart" && montagerahmenMaterial ? montagerahmenMaterial : undefined,
           einzelteile: beschlaegeMode === "einzelteile" ? einzelteileQuantities : undefined,
-          // Fenster
-          width: parseFloat(width),
-          height: parseFloat(height),
+          // Fenster — multi-position
+          windowPositions: windowPositions.map(p => ({
+            fluegelOption: [
+              { value: "beide-seiten", label: "V1: Beide Seiten" },
+              { value: "nur-links-ganz", label: "V2: Nur eine Seite ganz" },
+              { value: "nur-rechts-ganz", label: "V2: Nur eine Seite ganz" },
+              { value: "nur-links-halb", label: "V3: Nur eine Seite halb" },
+              { value: "nur-rechts-halb", label: "V3: Nur eine Seite halb" },
+            ].find(o => o.value === p.fluegelOption)?.label || p.fluegelOption,
+            anzahlFenster: parseInt(p.anzahlFenster) || 1,
+            width: parseFloat(p.width),
+            height: parseFloat(p.height),
+          })),
+          // Backward compat: also send first position as flat fields
+          width: parseFloat(windowPositions[0]?.width || "0"),
+          height: parseFloat(windowPositions[0]?.height || "0"),
           fluegelOption: [
             { value: "beide-seiten", label: "V1: Beide Seiten" },
             { value: "nur-links-ganz", label: "V2: Nur eine Seite ganz" },
             { value: "nur-rechts-ganz", label: "V2: Nur eine Seite ganz" },
             { value: "nur-links-halb", label: "V3: Nur eine Seite halb" },
             { value: "nur-rechts-halb", label: "V3: Nur eine Seite halb" },
-          ].find(o => o.value === fluegelOption)?.label || fluegelOption,
-          anzahlFenster: parseInt(anzahlFenster) || 1,
+          ].find(o => o.value === windowPositions[0]?.fluegelOption)?.label || windowPositions[0]?.fluegelOption,
+          anzahlFenster: parseInt(windowPositions[0]?.anzahlFenster || "1") || 1,
           // Sonderwünsche
           sonderwuensche: sonderwuensche || undefined,
           // Dateien
@@ -2222,137 +2251,174 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
               )}
 
 
-
-              {/* Anzahl Fenster - NEW STEP 6 (previously 8) */}
+              {/* Multi-Position Window Configuration - Steps 6–8 combined */}
               <FadeIn className="md:col-span-2" delay={500}>
                 <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden">
                   <CardHeader className="p-4 md:p-6">
-                    <CardTitle className="text-lg md:text-2xl">6. Anzahl Fenster</CardTitle>
-                    <CardDescription className="text-sm md:text-base">
-                      Wie viele Fenster möchten Sie mit diesen Klappläden ausstatten?
-                    </CardDescription>
+                    <CardTitle className="text-lg md:text-2xl">6. Fenster konfigurieren</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
-                    <div className="flex items-center gap-4">
-                      <Input
-                        id="anzahl-fenster"
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={anzahlFenster}
-                        onChange={(e) => setAnzahlFenster(e.target.value)}
-                        className="w-32 text-lg h-12 text-center"
-                      />
-                      <span className="text-muted-foreground">Fenster mit gleichen Maßen</span>
-                    </div>
-
-                    <div className="p-4 bg-muted/50 rounded-lg w-full">
-                      <div className="font-semibold">
-                        {parseInt(anzahlFenster) > 0
-                          ? `${anzahlFenster} Fenster ausgewählt`
-                          : "Bitte geben Sie die Anzahl der Fenster ein"}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </FadeIn>
-
-              {/* Fenstermaße - NEW STEP 7 (previously 6) */}
-              <FadeIn className="md:col-span-2" delay={550}>
-                <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden">
-                  <CardHeader className="p-4 md:p-6">
-                    <CardTitle className="text-lg md:text-2xl">7. Fenstermaße eingeben</CardTitle>
-                    <CardDescription className="text-sm md:text-base">Geben Sie die Breite und Höhe Ihres Fensters in mm ein</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
-                      <div className="space-y-2 w-full">
-                        <Label htmlFor="width" className="text-base">Breite (mm)</Label>
-                        <Input
-                          id="width"
-                          type="number"
-                          placeholder="z.B. 1200"
-                          value={width}
-                          onChange={(e) => setWidth(e.target.value)}
-                          min="0"
-                          className="w-full text-lg p-3 h-12"
-                        />
-                      </div>
-                      <div className="space-y-2 w-full">
-                        <Label htmlFor="height" className="text-base">Höhe (mm)</Label>
-                        <Input
-                          id="height"
-                          type="number"
-                          placeholder="z.B. 1500"
-                          value={height}
-                          onChange={(e) => setHeight(e.target.value)}
-                          min="0"
-                          className="w-full text-lg p-3 h-12"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </FadeIn>
-
-              {/* Anzahl der Flügel pro Fenster - NEW STEP 8 (Klappladen only) */}
-              {shutterType === 'klappladen' && (
-                <FadeIn className="md:col-span-2" delay={600}>
-                  <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden">
-                    <CardHeader className="p-4 md:p-6">
-                      <CardTitle className="text-lg md:text-2xl">8. Anzahl der Flügel pro Fenster</CardTitle>
-                      <CardDescription className="text-sm md:text-base">
-                        Wählen Sie die Flügelanordnung für Ihre Klappläden
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {[
-                          { value: "beide-seiten", label: "Zweiteilig - Beide Seiten", desc: "Je nach Fensterbreite drei- oder vierteilig", img: "/configurator-assets/Fensterladen - beide Seiten.png" },
-                          { value: "nur-links-ganz", label: "Einteilig - Klappladen links oder rechts", desc: "Ein Klappladen volle Fensterbreite", img: "/configurator-assets/Fensterladen nur links - ganze Breite.png" },
-                          { value: "nur-links-halb", label: "Zweiteilig gekoppelt – Klappladen links oder rechts", desc: "Zwei Klappläden halbe Fensterbreite", img: "/configurator-assets/Fensterladen nur links - halbe Breite.png" },
-                        ].map((option) => (
-                          <div
-                            key={option.value}
-                            className={`p-4 rounded-lg border-2 flex flex-col items-center text-center cursor-pointer transition-all ${fluegelOption === option.value
-                              ? 'border-primary bg-primary/5 shadow-md'
-                              : 'border-muted bg-popover hover:border-primary/50'
-                              }`}
-                            onClick={() => setFluegelOption(option.value)}
-                          >
-                            <div className="w-full h-32 mb-3 bg-white rounded-md border border-muted/50 p-2 flex items-center justify-center">
-                              <img src={option.img} alt={option.label} className="max-w-full max-h-full object-contain" />
+                  <CardContent className="space-y-6 p-4 md:p-6 pt-0 md:pt-0">
+                    {windowPositions.map((position, index) => (
+                      <div
+                        key={position.id}
+                        className={`rounded-xl border-2 overflow-hidden transition-all ${windowPositions.length > 1 ? 'border-primary/20' : 'border-muted'}`}
+                      >
+                        {/* Position Header */}
+                        <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b border-muted">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                              {index + 1}
                             </div>
-                            <div className="font-semibold text-sm">{option.label}</div>
-                            <p className="text-xs text-muted-foreground mt-1">{option.desc}</p>
+                            <span className="font-semibold text-sm md:text-base">
+                              Position {index + 1}
+                              {position.width && position.height ? ` — ${position.width} × ${position.height} mm` : ''}
+                            </span>
                           </div>
-                        ))}
-                      </div>
+                          {windowPositions.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removePosition(position.id)}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Position entfernen"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
 
-                      {/* Selection Status */}
-                      <div className="p-4 bg-muted/50 rounded-lg w-full">
-                        <div className="font-semibold">
-                          {fluegelOption
-                            ? `Gewählt: ${[
-                              { value: "beide-seiten", label: "V1: Beide Seiten" },
-                              { value: "nur-links-ganz", label: "V2: Nur eine Seite ganz" },
-                              { value: "nur-rechts-ganz", label: "V2: Nur eine Seite ganz" },
-                              { value: "nur-links-halb", label: "V3: Nur eine Seite halb" },
-                              { value: "nur-rechts-halb", label: "V3: Nur eine Seite halb" },
-                            ].find(o => o.value === fluegelOption)?.label}`
-                            : "Bitte wählen Sie eine Flügelanordnung"}
+                        <div className="p-4 space-y-5">
+                          {/* 6. Anzahl der Flügel pro Fenster (Klappladen only) */}
+                          {shutterType === 'klappladen' && (
+                            <div className="space-y-3">
+                              <Label className="text-sm md:text-base font-semibold block">
+                                Anzahl der Flügel pro Fenster
+                              </Label>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {[
+                                  { value: "beide-seiten", label: "Zweiteilig - Beide Seiten", desc: "Je nach Fensterbreite drei- oder vierteilig", img: "/configurator-assets/Fensterladen - beide Seiten.png" },
+                                  { value: "nur-links-ganz", label: "Einteilig - Klappladen links oder rechts", desc: "Ein Klappladen volle Fensterbreite", img: "/configurator-assets/Fensterladen nur links - ganze Breite.png" },
+                                  { value: "nur-links-halb", label: "Zweiteilig gekoppelt – Klappladen links oder rechts", desc: "Zwei Klappläden halbe Fensterbreite", img: "/configurator-assets/Fensterladen nur links - halbe Breite.png" },
+                                ].map((option) => (
+                                  <div
+                                    key={option.value}
+                                    className={`p-3 rounded-lg border-2 flex flex-col items-center text-center cursor-pointer transition-all ${position.fluegelOption === option.value
+                                      ? 'border-primary bg-primary/5 shadow-md'
+                                      : 'border-muted bg-popover hover:border-primary/50'
+                                      }`}
+                                    onClick={() => updatePosition(position.id, 'fluegelOption', option.value)}
+                                  >
+                                    <div className="w-full h-24 md:h-28 mb-2 bg-white rounded-md border border-muted/50 p-1.5 flex items-center justify-center">
+                                      <img src={option.img} alt={option.label} className="max-w-full max-h-full object-contain" />
+                                    </div>
+                                    <div className="font-semibold text-xs md:text-sm leading-tight">{option.label}</div>
+                                    <p className="text-[10px] md:text-xs text-muted-foreground mt-1">{option.desc}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 7. Anzahl Fenster */}
+                          <div className="space-y-2">
+                            <Label className="text-sm md:text-base font-semibold block">
+                              Anzahl der Fenster
+                            </Label>
+                            <div className="flex items-center gap-3">
+                              <Input
+                                type="number"
+                                min="1"
+                                max="100"
+                                value={position.anzahlFenster}
+                                onChange={(e) => updatePosition(position.id, 'anzahlFenster', e.target.value)}
+                                className="w-24 text-lg h-11 text-center"
+                              />
+                              <span className="text-sm text-muted-foreground">Fenster mit diesen Maßen</span>
+                            </div>
+                          </div>
+
+                          {/* 8. Fenstermaße */}
+                          <div className="space-y-2">
+                            <Label className="text-sm md:text-base font-semibold block">
+                              Fenstermaße eingeben
+                            </Label>
+                            <div className="grid grid-cols-2 gap-3 md:gap-4">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground">Breite (mm)</Label>
+                                <Input
+                                  type="number"
+                                  placeholder="z.B. 1200"
+                                  value={position.width}
+                                  onChange={(e) => updatePosition(position.id, 'width', e.target.value)}
+                                  min="0"
+                                  className="w-full text-lg h-11"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground">Höhe (mm)</Label>
+                                <Input
+                                  type="number"
+                                  placeholder="z.B. 1500"
+                                  value={position.height}
+                                  onChange={(e) => updatePosition(position.id, 'height', e.target.value)}
+                                  min="0"
+                                  className="w-full text-lg h-11"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </FadeIn>
-              )}
+                    ))}
 
-              {/* Sonderwünsche - Step 9 */}
+                    {/* Add Position Button */}
+                    <button
+                      type="button"
+                      onClick={addPosition}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 text-primary text-sm font-semibold transition-all"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
+                      Weitere Fenstergröße / Position hinzufügen
+                    </button>
+
+                    {/* Summary */}
+                    <div className="p-4 bg-muted/50 rounded-lg w-full">
+                      <div className="font-semibold mb-2">
+                        {windowPositions.length === 1 ? '1 Position' : `${windowPositions.length} Positionen`} konfiguriert
+                      </div>
+                      <div className="space-y-1">
+                        {windowPositions.map((pos, idx) => {
+                          const fluegelLabel = [
+                            { value: "beide-seiten", label: "Beide Seiten" },
+                            { value: "nur-links-ganz", label: "Einteilig" },
+                            { value: "nur-links-halb", label: "Zweiteilig gekoppelt" },
+                          ].find(o => o.value === pos.fluegelOption)?.label || "—";
+
+                          return (
+                            <div key={pos.id} className="text-sm text-muted-foreground flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[11px] flex-shrink-0">{idx + 1}</span>
+                              <span>
+                                {pos.width && pos.height
+                                  ? `${pos.width} × ${pos.height} mm`
+                                  : 'Maße fehlen'}
+                                {' · '}
+                                {pos.anzahlFenster || 1}× Fenster
+                                {shutterType === 'klappladen' && ` · ${fluegelLabel}`}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </FadeIn>
+
+
+              {/* Sonderwünsche - Step 7 */}
               <FadeIn className="md:col-span-2" delay={650}>
                 <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden">
                   <CardHeader className="p-4 md:p-6">
-                    <CardTitle className="text-lg md:text-2xl">9. Sonderwünsche</CardTitle>
+                    <CardTitle className="text-lg md:text-2xl">7. Sonderwünsche</CardTitle>
                     <CardDescription className="text-sm md:text-base">
                       Haben Sie besondere Anforderungen, wie zum Beispiel Rahmenmaßänderungen bei Holzfensterläden (z.B. 6cm statt 8cm), andere Holzarten (z.B. Eiche), spezielle Oberflächenbehandlungen (NCS-Farben oder Lasuren), Fensterläden in Sonderformen (z.B. mit Bögen) oder sonstige individuelle Wünsche?
                     </CardDescription>
@@ -2421,7 +2487,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
               <FadeIn className="md:col-span-2" delay={650}>
                 <Card className="shadow-[var(--shadow-elegant)] w-full overflow-hidden border-2 border-primary/20">
                   <CardHeader className="p-4 md:p-6 bg-primary/5">
-                    <CardTitle className="text-lg md:text-2xl">10. Konfiguration anzeigen</CardTitle>
+                    <CardTitle className="text-lg md:text-2xl">8. Konfiguration anzeigen</CardTitle>
                     <CardDescription className="text-sm md:text-base">
                       Wenn Sie alle gewünschten Einstellungen getroffen haben, können Sie hier Ihre Konfiguration anzeigen und ein Angebot dafür anfordern.
                     </CardDescription>
@@ -2633,33 +2699,40 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
 
                           {/* Maße & Fenster */}
                           <div className={`bg-card p-5 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300 space-y-2 ${(sonderwuensche || uploadedFiles.length > 0) ? '' : 'md:col-span-2'}`}>
-                            <h4 className="font-semibold mb-3 text-primary flex items-center gap-2 tracking-tight">Maße & Fenster</h4>
-                            <ul className="space-y-2 text-muted-foreground">
-                              <li className="flex gap-2">
-                                <span className="opacity-70 w-28 shrink-0">Breite:</span>
-                                <span className="text-foreground font-medium">{width} mm</span>
-                              </li>
-                              <li className="flex gap-2">
-                                <span className="opacity-70 w-28 shrink-0">Höhe:</span>
-                                <span className="text-foreground font-medium">{height} mm</span>
-                              </li>
-                              <li className="flex gap-2">
-                                <span className="opacity-70 w-28 shrink-0">Flügel:</span>
-                                <span className="text-foreground font-medium leading-tight">{
-                                  [
-                                    { value: "beide-seiten", label: "V1: Beide Seiten" },
-                                    { value: "nur-links-ganz", label: "V2: Nur eine Seite ganz" },
-                                    { value: "nur-rechts-ganz", label: "V2: Nur eine Seite ganz" },
-                                    { value: "nur-links-halb", label: "V3: Nur eine Seite halb" },
-                                    { value: "nur-rechts-halb", label: "V3: Nur eine Seite halb" },
-                                  ].find(o => o.value === fluegelOption)?.label || fluegelOption || "—"
-                                }</span>
-                              </li>
-                              <li className="flex gap-2">
-                                <span className="opacity-70 w-28 shrink-0">Anzahl Fenster:</span>
-                                <span className="text-foreground font-medium">{anzahlFenster || 1}</span>
-                              </li>
-                            </ul>
+                            <h4 className="font-semibold mb-3 text-primary flex items-center gap-2 tracking-tight">Fenster & Positionen</h4>
+                            <div className="space-y-3">
+                              {windowPositions.map((pos, idx) => {
+                                const flLabel = [
+                                  { value: "beide-seiten", label: "V1: Beide Seiten" },
+                                  { value: "nur-links-ganz", label: "V2: Einteilig" },
+                                  { value: "nur-links-halb", label: "V3: Zweiteilig gekoppelt" },
+                                ].find(o => o.value === pos.fluegelOption)?.label || pos.fluegelOption || "—";
+
+                                return (
+                                  <div key={pos.id} className={`text-muted-foreground ${windowPositions.length > 1 ? 'p-3 bg-muted/30 rounded-lg border border-border/40' : ''}`}>
+                                    {windowPositions.length > 1 && (
+                                      <div className="text-xs font-semibold text-primary mb-1.5">Position {idx + 1}</div>
+                                    )}
+                                    <ul className="space-y-1.5">
+                                      <li className="flex gap-2">
+                                        <span className="opacity-70 w-28 shrink-0">Maße:</span>
+                                        <span className="text-foreground font-medium">{pos.width || '—'} × {pos.height || '—'} mm</span>
+                                      </li>
+                                      <li className="flex gap-2">
+                                        <span className="opacity-70 w-28 shrink-0">Anzahl:</span>
+                                        <span className="text-foreground font-medium">{pos.anzahlFenster || 1} Fenster</span>
+                                      </li>
+                                      {shutterType === 'klappladen' && (
+                                        <li className="flex gap-2">
+                                          <span className="opacity-70 w-28 shrink-0">Flügel:</span>
+                                          <span className="text-foreground font-medium leading-tight">{flLabel}</span>
+                                        </li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
 
                           {/* Sonderwünsche */}

@@ -116,6 +116,20 @@ CREATE TABLE public.oberflaechen (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT oberflaechen_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.payment_orders (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  order_code bigint NOT NULL UNIQUE,
+  package_type text NOT NULL CHECK (package_type = ANY (ARRAY['day_pass'::text, 'credit_pack'::text, 'vip_pro'::text, 'deposit'::text])),
+  amount bigint NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'paid'::text, 'cancelled'::text, 'expired'::text])),
+  payos_payment_link_id text,
+  payos_checkout_url text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  paid_at timestamp with time zone,
+  CONSTRAINT payment_orders_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
 CREATE TABLE public.quote_requests (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   name text NOT NULL,
@@ -161,6 +175,45 @@ CREATE TABLE public.shutter_types (
   is_active boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT shutter_types_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.user_subscriptions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  package_type text NOT NULL CHECK (package_type = ANY (ARRAY['day_pass'::text, 'credit_pack'::text, 'vip_pro'::text])),
+  status text NOT NULL DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'expired'::text, 'cancelled'::text])),
+  starts_at timestamp with time zone NOT NULL DEFAULT now(),
+  expires_at timestamp with time zone,
+  scan_credits_remaining integer,
+  payment_reference text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_subscriptions_pkey PRIMARY KEY (id),
+  CONSTRAINT user_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.wallet_transactions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  wallet_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['deposit'::text, 'scan_purchase'::text, 'vip_subscription'::text, 'marketplace_buy'::text, 'marketplace_sale'::text, 'escrow_hold'::text, 'escrow_release'::text, 'bid_hold'::text, 'bid_release'::text, 'razz_purchase'::text, 'razz_win_refund'::text, 'withdrawal'::text, 'withdrawal_pending'::text, 'platform_fee'::text])),
+  amount bigint NOT NULL,
+  balance_after bigint NOT NULL,
+  description text,
+  reference_id text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT wallet_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT wallet_transactions_wallet_id_fkey FOREIGN KEY (wallet_id) REFERENCES public.wallets(id),
+  CONSTRAINT wallet_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.wallets (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE,
+  available_balance bigint NOT NULL DEFAULT 0 CHECK (available_balance >= 0),
+  held_balance bigint NOT NULL DEFAULT 0 CHECK (held_balance >= 0),
+  total_deposited bigint NOT NULL DEFAULT 0,
+  total_withdrawn bigint NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT wallets_pkey PRIMARY KEY (id),
+  CONSTRAINT wallets_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.window_types (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
