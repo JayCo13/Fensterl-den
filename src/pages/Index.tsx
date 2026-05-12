@@ -34,7 +34,7 @@ const Index = () => {
 
             <footer className="py-8 border-t bg-muted/30">
                 <div className="container px-4 text-center text-sm text-muted-foreground">
-                    <p>© 2025 Fensterläden. Alle Rechte vorbehalten.</p>
+                    <p>© 2026 Fensterläden. Alle Rechte vorbehalten.</p>
                 </div>
             </footer>
             <ScrollToTop />

@@ -177,6 +177,7 @@ Deno.serve(async (req) => {
         await transporter.sendMail({
             from: `"Blank Konfigurator" <${GMAIL_USER}>`,
             to: RECIPIENT_EMAIL,
+            cc: 'markus@blank.at',
             replyTo: data.email,
             subject: subject,
             html: emailHTML,

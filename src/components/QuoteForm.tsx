@@ -176,7 +176,7 @@ export const QuoteForm = () => {
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  Unverbindlich & kostenlos • Antwort innerhalb von 24 Stunden an Werktagen
+                  Unverbindlich & kostenlos
                 </p>
               </form>
             </CardContent>

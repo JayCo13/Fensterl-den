@@ -26,7 +26,7 @@ export const Header = () => {
 
         {/* Desktop Navigation - Centered */}
         <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-          <a href="https://www.blank.at" className="text-sm font-medium text-white/70 hover:text-white transition-colors uppercase tracking-wider">
+          <a href="https://www.blank.at" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-white/70 hover:text-white transition-colors uppercase tracking-wider">
             Home
           </a>
           <a href="#konfigurator" className="text-sm font-medium text-white hover:text-white transition-colors uppercase tracking-wider border-b-2 border-primary pb-1">
@@ -71,6 +71,8 @@ export const Header = () => {
           <nav className="container flex flex-col gap-4 py-6 px-4 h-[calc(100vh-5rem)]">
             <a
               href="https://www.blank.at"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-base font-medium text-white/80 hover:text-white transition-colors uppercase tracking-wider"
             >
               Home

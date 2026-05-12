@@ -2295,9 +2295,9 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                               </Label>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 {[
-                                  { value: "beide-seiten", label: "Zweiteilig - Beide Seiten", desc: "Je nach Fensterbreite drei- oder vierteilig", img: "/configurator-assets/Fensterladen - beide Seiten.png" },
-                                  { value: "nur-links-ganz", label: "Einteilig - Klappladen links oder rechts", desc: "Ein Klappladen volle Fensterbreite", img: "/configurator-assets/Fensterladen nur links - ganze Breite.png" },
-                                  { value: "nur-links-halb", label: "Zweiteilig gekoppelt – Klappladen links oder rechts", desc: "Zwei Klappläden halbe Fensterbreite", img: "/configurator-assets/Fensterladen nur links - halbe Breite.png" },
+                                  { value: "beide-seiten", label: "Zweiteilig - Beide Seiten", desc: "Je nach Fensterbreite drei- oder vierteilig. optimale Ladenbreite bis 60cm", img: "/configurator-assets/Fensterladen - beide Seiten.png" },
+                                  { value: "nur-links-ganz", label: "Einteilig - Klappladen links oder rechts", desc: "Ein Klappladen volle Fensterbreite. optimale Ladenbreite bis 60cm", img: "/configurator-assets/Fensterladen nur links - ganze Breite.png" },
+                                  { value: "nur-links-halb", label: "Zweiteilig gekoppelt – Klappladen links oder rechts", desc: "Zwei Klappläden halbe Fensterbreite. optimale Ladenbreite bis 60cm", img: "/configurator-assets/Fensterladen nur links - halbe Breite.png" },
                                 ].map((option) => (
                                   <div
                                     key={option.value}
