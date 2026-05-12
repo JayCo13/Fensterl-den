@@ -2920,7 +2920,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
               </Button>
             </div>
             <p className="text-[11px] sm:text-xs text-muted-foreground text-center">
-              Unverbindlich & kostenlos • Antwort innerhalb von 24h an Werktagen
+              Unverbindlich & kostenlos
             </p>
           </div>
         </DialogContent>
