@@ -1,8 +1,8 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { initPosthog } from "./lib/posthog";
+import { initPosthogIfConsented } from "./lib/posthog";
 
-initPosthog();
+initPosthogIfConsented();
 
 createRoot(document.getElementById("root")!).render(<App />);
