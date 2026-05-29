@@ -32,11 +32,13 @@ export const getConsent = (): ConsentStatus => {
 
 export const acceptConsent = () => {
   window.localStorage.setItem(CONSENT_STORAGE_KEY, "accepted");
+  window.dispatchEvent(new Event("consent-changed"));
   doInit();
 };
 
 export const declineConsent = () => {
   window.localStorage.setItem(CONSENT_STORAGE_KEY, "declined");
+  window.dispatchEvent(new Event("consent-changed"));
 };
 
 export const initPosthogIfConsented = () => {

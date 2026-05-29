@@ -485,6 +485,36 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
     return woodBWMap[designName] || `/configurator-assets/${designName} - preview-bw.png`;
   };
 
+  // Wood preview images per wood type + Figur (Britta-supplied 2026-05-29).
+  // Used for raw/unbehandelt previews (no color overlay) and as a tinted base
+  // for color previews so the grain shows through the RAL/NCS tint.
+  const getWoodKey = (woodName?: string): "fichte" | "kiefer" | "laerche" | "meranti" | null => {
+    if (!woodName) return null;
+    const n = woodName.toLowerCase();
+    if (n.includes("fichte") || n.includes("tanne")) return "fichte";
+    if (n.includes("kiefer")) return "kiefer";
+    if (n.includes("lärche") || n.includes("larche") || n.includes("laerche")) return "laerche";
+    if (n.includes("meranti")) return "meranti";
+    return null;
+  };
+
+  const getFigurKey = (designName: string): string | null => {
+    const m = designName.match(/^Figur\s+(1|2B|2|3|4|5|6|7G|7|8|9)$/);
+    return m ? m[1] : null;
+  };
+
+  const getWoodRawPreview = (designName: string, woodName?: string): string | null => {
+    const w = getWoodKey(woodName);
+    const f = getFigurKey(designName);
+    return w && f ? `/configurator-assets/wood-shutters/Holz-${w}-Figur-${f}.png` : null;
+  };
+
+  const getWoodColorBase = (designName: string, woodName?: string): string | null => {
+    const w = getWoodKey(woodName);
+    const f = getFigurKey(designName);
+    return w && f ? `/configurator-assets/wood-color-base/${w}-preview-Figur-${f}.png` : null;
+  };
+
   const getDesignDetailsBW = (designName: string) => {
     if (effectiveMaterial === "aluminum") {
       const aluDetailsBWMap: Record<string, string> = {
@@ -2512,41 +2542,53 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                         <div className="mb-6">
                           <div className="bg-white p-4 rounded-xl border border-border/60 shadow-sm flex items-center justify-center min-h-[300px] md:min-h-[400px]">
                             <div className="relative inline-block w-full flex justify-center items-center">
-                              <img
-                                src={getDesignDetailsBW(selectedDesignData?.name || "")}
-                                alt={`${selectedDesignData?.name || ""} Vorschau`}
-                                className="w-auto h-auto max-w-full max-h-[50vh] object-contain drop-shadow-sm"
-                                onError={(e) => { (e.target as HTMLImageElement).src = getDesignDetailsImage(selectedDesignData?.name || "", material); }}
-                              />
-                              <div
-                                className="absolute inset-0 mix-blend-multiply pointer-events-none"
-                                style={(() => {
-                                  const hex = customRal && isValidRalCode(customRal)
-                                    ? (getRalHexColor(customRal) || '')
-                                    : (selectedRalData?.hex_color || '');
-                                  if (!hex) return { backgroundColor: 'transparent' };
-                                  const r = parseInt(hex.slice(1, 3), 16) / 255;
-                                  const g = parseInt(hex.slice(3, 5), 16) / 255;
-                                  const b = parseInt(hex.slice(5, 7), 16) / 255;
-                                  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-                                  const opacity = luminance < 0.3 ? 0.9 + luminance : 1;
+                              {(() => {
+                                const designName = selectedDesignData?.name || "";
+                                const isWoodRaw = effectiveMaterial === "wood" && colorSystem === "roh";
+                                const woodRawSrc = isWoodRaw ? getWoodRawPreview(designName, selectedWoodTypeData?.name) : null;
+                                const imgSrc = woodRawSrc ?? getDesignDetailsBW(designName);
+                                return (
+                                  <img
+                                    src={imgSrc}
+                                    alt={`${designName} Vorschau`}
+                                    className="w-auto h-auto max-w-full max-h-[50vh] object-contain drop-shadow-sm"
+                                    onError={(e) => { (e.target as HTMLImageElement).src = getDesignDetailsImage(designName, material); }}
+                                  />
+                                );
+                              })()}
+                              {(effectiveMaterial !== "wood" || colorSystem !== "roh") && (
+                                <div
+                                  className="absolute inset-0 mix-blend-multiply pointer-events-none"
+                                  style={(() => {
+                                    const hex = customRal && isValidRalCode(customRal)
+                                      ? (getRalHexColor(customRal) || '')
+                                      : (selectedRalData?.hex_color || '');
+                                    if (!hex) return { backgroundColor: 'transparent' };
+                                    const r = parseInt(hex.slice(1, 3), 16) / 255;
+                                    const g = parseInt(hex.slice(3, 5), 16) / 255;
+                                    const b = parseInt(hex.slice(5, 7), 16) / 255;
+                                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                                    const opacity = luminance < 0.3 ? 0.9 + luminance : 1;
 
-                                  const imageUrl = getDesignDetailsBW(selectedDesignData?.name || "");
+                                    const designName = selectedDesignData?.name || "";
+                                    const woodBase = effectiveMaterial === "wood" ? getWoodColorBase(designName, selectedWoodTypeData?.name) : null;
+                                    const imageUrl = woodBase ?? getDesignDetailsBW(designName);
 
-                                  return {
-                                    backgroundColor: hex,
-                                    opacity,
-                                    maskImage: `url('${imageUrl}')`,
-                                    WebkitMaskImage: `url('${imageUrl}')`,
-                                    maskSize: 'contain',
-                                    WebkitMaskSize: 'contain',
-                                    maskPosition: 'center',
-                                    WebkitMaskPosition: 'center',
-                                    maskRepeat: 'no-repeat',
-                                    WebkitMaskRepeat: 'no-repeat'
-                                  };
-                                })()}
-                              />
+                                    return {
+                                      backgroundColor: hex,
+                                      opacity,
+                                      maskImage: `url('${imageUrl}')`,
+                                      WebkitMaskImage: `url('${imageUrl}')`,
+                                      maskSize: 'contain',
+                                      WebkitMaskSize: 'contain',
+                                      maskPosition: 'center',
+                                      WebkitMaskPosition: 'center',
+                                      maskRepeat: 'no-repeat',
+                                      WebkitMaskRepeat: 'no-repeat'
+                                    };
+                                  })()}
+                                />
+                              )}
                             </div>
                           </div>
                           <div className="flex flex-col gap-1 text-sm font-medium text-amber-700 bg-amber-50/60 py-3 px-4 rounded-lg border border-amber-200 mt-4 mx-auto w-full md:max-w-max text-left md:text-center leading-snug">
@@ -2980,43 +3022,59 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           <div className="p-5 flex-1 flex flex-col items-center justify-center min-h-[300px] md:min-h-[350px]">
             <div className="max-w-md w-full mx-auto rounded-xl overflow-hidden border border-border/60 shadow-md flex items-center justify-center p-6 md:p-10 bg-white">
               <div className="relative inline-block">
-                <img
-                  src={colorSystem === "roh" ? getDesignImage(selectedDesignData?.name || "", shutterType === 'schiebeladen' && selectedDesignData ? selectedDesignData.material as MaterialType : material) : getDesignPreviewBW(selectedDesignData?.name || "")}
-                  alt={`${selectedDesignData?.name || ""} Vorschau`}
-                  className="w-auto h-auto max-w-full max-h-[35vh] object-contain drop-shadow-lg"
-                  onError={(e) => { (e.target as HTMLImageElement).src = getDesignImage(selectedDesignData?.name || "", shutterType === 'schiebeladen' && selectedDesignData ? selectedDesignData.material as MaterialType : material); }}
-                />
-                <div
-                  className="absolute inset-0 mix-blend-multiply pointer-events-none"
-                  style={(() => {
-                    const hex = customRal && isValidRalCode(customRal)
-                      ? (getRalHexColor(customRal) || '')
-                      : (selectedRalData?.hex_color || '');
-                    if (!hex) return { backgroundColor: 'transparent' };
-                    // Parse hex to RGB and compute perceived luminance
-                    const r = parseInt(hex.slice(1, 3), 16) / 255;
-                    const g = parseInt(hex.slice(3, 5), 16) / 255;
-                    const b = parseInt(hex.slice(5, 7), 16) / 255;
-                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-                    // Dark colors (low luminance) get reduced opacity to preserve detail
-                    const opacity = luminance < 0.3 ? 0.9 + luminance : 1;
+                {(() => {
+                  const designName = selectedDesignData?.name || "";
+                  const fallbackMat = shutterType === 'schiebeladen' && selectedDesignData ? selectedDesignData.material as MaterialType : material;
+                  const isWoodRaw = effectiveMaterial === "wood" && colorSystem === "roh";
+                  const woodRawSrc = isWoodRaw ? getWoodRawPreview(designName, selectedWoodTypeData?.name) : null;
+                  const imgSrc = woodRawSrc
+                    ?? (colorSystem === "roh"
+                      ? getDesignImage(designName, fallbackMat)
+                      : getDesignPreviewBW(designName));
+                  return (
+                    <img
+                      src={imgSrc}
+                      alt={`${designName} Vorschau`}
+                      className="w-auto h-auto max-w-full max-h-[35vh] object-contain drop-shadow-lg"
+                      onError={(e) => { (e.target as HTMLImageElement).src = getDesignImage(designName, fallbackMat); }}
+                    />
+                  );
+                })()}
+                {(effectiveMaterial !== "wood" || colorSystem !== "roh") && (
+                  <div
+                    className="absolute inset-0 mix-blend-multiply pointer-events-none"
+                    style={(() => {
+                      const hex = customRal && isValidRalCode(customRal)
+                        ? (getRalHexColor(customRal) || '')
+                        : (selectedRalData?.hex_color || '');
+                      if (!hex) return { backgroundColor: 'transparent' };
+                      // Parse hex to RGB and compute perceived luminance
+                      const r = parseInt(hex.slice(1, 3), 16) / 255;
+                      const g = parseInt(hex.slice(3, 5), 16) / 255;
+                      const b = parseInt(hex.slice(5, 7), 16) / 255;
+                      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                      // Dark colors (low luminance) get reduced opacity to preserve detail
+                      const opacity = luminance < 0.3 ? 0.9 + luminance : 1;
 
-                    const imageUrl = getDesignPreviewBW(selectedDesignData?.name || "");
+                      const designName = selectedDesignData?.name || "";
+                      const woodBase = effectiveMaterial === "wood" ? getWoodColorBase(designName, selectedWoodTypeData?.name) : null;
+                      const imageUrl = woodBase ?? getDesignPreviewBW(designName);
 
-                    return {
-                      backgroundColor: hex,
-                      opacity,
-                      maskImage: `url('${imageUrl}')`,
-                      WebkitMaskImage: `url('${imageUrl}')`,
-                      maskSize: 'contain',
-                      WebkitMaskSize: 'contain',
-                      maskPosition: 'center',
-                      WebkitMaskPosition: 'center',
-                      maskRepeat: 'no-repeat',
-                      WebkitMaskRepeat: 'no-repeat'
-                    };
-                  })()}
-                />
+                      return {
+                        backgroundColor: hex,
+                        opacity,
+                        maskImage: `url('${imageUrl}')`,
+                        WebkitMaskImage: `url('${imageUrl}')`,
+                        maskSize: 'contain',
+                        WebkitMaskSize: 'contain',
+                        maskPosition: 'center',
+                        WebkitMaskPosition: 'center',
+                        maskRepeat: 'no-repeat',
+                        WebkitMaskRepeat: 'no-repeat'
+                      };
+                    })()}
+                  />
+                )}
               </div>
             </div>
             <div className="flex flex-col gap-1 text-sm font-medium text-amber-700 bg-amber-50/60 py-3 px-4 rounded-lg border border-amber-200 mt-4 mx-auto w-full md:max-w-max text-left md:text-center leading-snug">

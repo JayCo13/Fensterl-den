@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getConsent } from "@/lib/posthog";
 
 export const ScrollToTop = () => {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         const toggleVisibility = () => {
-            // Show button when page is scrolled down 300px
-            if (window.scrollY > 300) {
+            // Hide while the consent banner is still showing — they overlap in the
+            // bottom-right corner.
+            const consentResolved = getConsent() !== "unknown";
+            if (window.scrollY > 300 && consentResolved) {
                 setIsVisible(true);
             } else {
                 setIsVisible(false);
@@ -16,9 +19,11 @@ export const ScrollToTop = () => {
         };
 
         window.addEventListener("scroll", toggleVisibility);
+        window.addEventListener("consent-changed", toggleVisibility);
 
         return () => {
             window.removeEventListener("scroll", toggleVisibility);
+            window.removeEventListener("consent-changed", toggleVisibility);
         };
     }, []);
 
