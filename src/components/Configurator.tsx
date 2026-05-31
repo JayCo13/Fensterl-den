@@ -503,16 +503,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
     return m ? m[1] : null;
   };
 
-  const getWoodRawPreview = (designName: string, woodName?: string): string | null => {
+  const getWoodShutterImage = (designName: string, woodName?: string): string | null => {
     const w = getWoodKey(woodName);
     const f = getFigurKey(designName);
     return w && f ? `/configurator-assets/wood-shutters/Holz-${w}-Figur-${f}.png` : null;
-  };
-
-  const getWoodColorBase = (designName: string, woodName?: string): string | null => {
-    const w = getWoodKey(woodName);
-    const f = getFigurKey(designName);
-    return w && f ? `/configurator-assets/wood-color-base/${w}-preview-Figur-${f}.png` : null;
   };
 
   const getDesignDetailsBW = (designName: string) => {
@@ -2545,7 +2539,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                               {(() => {
                                 const designName = selectedDesignData?.name || "";
                                 const isWoodRaw = effectiveMaterial === "wood" && colorSystem === "roh";
-                                const woodRawSrc = isWoodRaw ? getWoodRawPreview(designName, selectedWoodTypeData?.name) : null;
+                                const woodRawSrc = isWoodRaw ? getWoodShutterImage(designName, selectedWoodTypeData?.name) : null;
                                 const imgSrc = woodRawSrc ?? getDesignDetailsBW(designName);
                                 return (
                                   <img
@@ -2571,7 +2565,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                                     const opacity = luminance < 0.3 ? 0.9 + luminance : 1;
 
                                     const designName = selectedDesignData?.name || "";
-                                    const woodBase = effectiveMaterial === "wood" ? getWoodColorBase(designName, selectedWoodTypeData?.name) : null;
+                                    const woodBase = effectiveMaterial === "wood" ? getWoodShutterImage(designName, selectedWoodTypeData?.name) : null;
                                     const imageUrl = woodBase ?? getDesignDetailsBW(designName);
 
                                     return {
@@ -3026,7 +3020,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                   const designName = selectedDesignData?.name || "";
                   const fallbackMat = shutterType === 'schiebeladen' && selectedDesignData ? selectedDesignData.material as MaterialType : material;
                   const isWoodRaw = effectiveMaterial === "wood" && colorSystem === "roh";
-                  const woodRawSrc = isWoodRaw ? getWoodRawPreview(designName, selectedWoodTypeData?.name) : null;
+                  const woodRawSrc = isWoodRaw ? getWoodShutterImage(designName, selectedWoodTypeData?.name) : null;
                   const imgSrc = woodRawSrc
                     ?? (colorSystem === "roh"
                       ? getDesignImage(designName, fallbackMat)
@@ -3057,7 +3051,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                       const opacity = luminance < 0.3 ? 0.9 + luminance : 1;
 
                       const designName = selectedDesignData?.name || "";
-                      const woodBase = effectiveMaterial === "wood" ? getWoodColorBase(designName, selectedWoodTypeData?.name) : null;
+                      const woodBase = effectiveMaterial === "wood" ? getWoodShutterImage(designName, selectedWoodTypeData?.name) : null;
                       const imageUrl = woodBase ?? getDesignPreviewBW(designName);
 
                       return {
