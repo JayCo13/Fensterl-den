@@ -3,7 +3,6 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { Configurator } from "@/components/Configurator";
 import { ShutterVisualizer } from "@/components/ShutterVisualizer";
-import { QuoteForm } from "@/components/QuoteForm";
 import { HelpSection } from "@/components/HelpSection";
 import { ScrollToTop } from "@/components/ScrollToTop";
 
@@ -29,7 +28,6 @@ const Index = () => {
                 woodType={selectedWoodType}
                 ralColor={selectedRalColor}
             />
-            <QuoteForm />
             <HelpSection />
 
             <footer className="py-8 border-t bg-muted/30">
