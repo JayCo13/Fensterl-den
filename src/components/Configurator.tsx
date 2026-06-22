@@ -742,6 +742,24 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
       return;
     }
 
+    // Validate that the Flügelanordnung is selected for each configured position (Klappladen only)
+    if (shutterType === 'klappladen') {
+      const positionMissingFluegel = windowPositions.some(p => {
+        const w = parseFloat(p.width);
+        const h = parseFloat(p.height);
+        return w > 0 && h > 0 && !p.fluegelOption;
+      });
+
+      if (positionMissingFluegel) {
+        toast({
+          title: "Auswahl erforderlich",
+          description: "Bitte wählen Sie die Flügelanordnung für jede Position aus.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     if (!selectedDesignData) {
       toast({
         title: "Fehler",
@@ -790,6 +808,25 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
         variant: "destructive"
       });
       return;
+    }
+
+    // Safety net: ensure every configured position still has a Flügelanordnung
+    // (e.g. if a position was added after the configuration was shown). Klappladen only.
+    if (shutterType === 'klappladen') {
+      const positionMissingFluegel = windowPositions.some(p => {
+        const w = parseFloat(p.width);
+        const h = parseFloat(p.height);
+        return w > 0 && h > 0 && !p.fluegelOption;
+      });
+
+      if (positionMissingFluegel) {
+        toast({
+          title: "Auswahl erforderlich",
+          description: "Bitte wählen Sie die Flügelanordnung für jede Position aus.",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -2323,7 +2360,7 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                           {shutterType === 'klappladen' && (
                             <div className="space-y-3">
                               <Label className="text-sm md:text-base font-semibold block">
-                                Anzahl der Flügel pro Fenster
+                                Anzahl der Flügel pro Fenster <span className="text-destructive">*</span>
                               </Label>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 {[
