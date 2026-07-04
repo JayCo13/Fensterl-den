@@ -1,3 +1,6 @@
+// ⚠️ STAGING/TEST COPY of send-quote-email — for Tai + Britta to test on the Netlify
+// preview before it goes live. Differences vs. prod: no cc to markus@blank.at, and the
+// back-office subject is prefixed "[TEST]". Delete this function once the change is promoted.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import nodemailer from "npm:nodemailer@6.9.8";
 
@@ -481,12 +484,12 @@ Deno.serve(async (req) => {
     const transporter = createTransporter();
 
     // 1. Back-office email (internal — unchanged wording, with attachments)
+    // STAGING: no Markus cc, [TEST] subject prefix so it can't be confused with a real lead.
     await transporter.sendMail({
       from: `"Blank Konfigurator" <${GMAIL_USER}>`,
       to: RECIPIENT_EMAIL,
-      cc: 'markus@blank.at',
       replyTo: data.customerEmail,
-      subject: `Neue Klappladen - Anfrage von ${data.customerName}`,
+      subject: `[TEST] Neue Klappladen - Anfrage von ${data.customerName}`,
       html: generateEmailHTML(data, 'backoffice'),
       attachments: mailAttachments,
     });
