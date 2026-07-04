@@ -1,6 +1,7 @@
 // ⚠️ STAGING/TEST COPY of send-quote-email — for Tai + Britta to test on the Netlify
-// preview before it goes live. Differences vs. prod: no cc to markus@blank.at, and the
-// back-office subject is prefixed "[TEST]". Delete this function once the change is promoted.
+// preview before it goes live. Differences vs. prod: uses separate STAGING_* test
+// mailboxes, no cc to markus@blank.at, and the back-office subject is prefixed "[TEST]".
+// Delete this function once the change is promoted.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import nodemailer from "npm:nodemailer@6.9.8";
 
@@ -9,10 +10,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Gmail SMTP configuration
-const GMAIL_USER = Deno.env.get('GMAIL_USER') || '';
-const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD') || '';
-const RECIPIENT_EMAIL = Deno.env.get('RECIPIENT_EMAIL') || GMAIL_USER;
+// Gmail SMTP configuration — STAGING mailboxes.
+// Set these 3 secrets on the Supabase project so testing never touches the
+// production sender / back-office inbox. Falls back to the prod secrets if unset,
+// so the function still runs (but then it is NOT isolated).
+const GMAIL_USER = Deno.env.get('STAGING_GMAIL_USER') || Deno.env.get('GMAIL_USER') || '';
+const GMAIL_APP_PASSWORD = Deno.env.get('STAGING_GMAIL_APP_PASSWORD') || Deno.env.get('GMAIL_APP_PASSWORD') || '';
+const RECIPIENT_EMAIL = Deno.env.get('STAGING_RECIPIENT_EMAIL') || Deno.env.get('RECIPIENT_EMAIL') || GMAIL_USER;
 
 interface FileAttachment {
   name: string;
