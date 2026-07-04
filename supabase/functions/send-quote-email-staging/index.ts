@@ -1,6 +1,8 @@
 // ⚠️ STAGING/TEST COPY of send-quote-email — for Tai + Britta to test on the Netlify
-// preview before it goes live. Differences vs. prod: uses separate STAGING_* test
-// mailboxes, no cc to markus@blank.at, and the back-office subject is prefixed "[TEST]".
+// preview before it goes live. Differences vs. prod: uses STAGING_* test mailboxes,
+// the Markus cc is redirected to STAGING_CC_EMAIL (a tester playing Markus) instead of
+// the real markus@blank.at, and the back-office subject is prefixed "[TEST]".
+// Role-play: STAGING_RECIPIENT_EMAIL = back-office (to), STAGING_CC_EMAIL = Markus (cc).
 // Delete this function once the change is promoted.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import nodemailer from "npm:nodemailer@6.9.8";
@@ -17,6 +19,8 @@ const corsHeaders = {
 const GMAIL_USER = Deno.env.get('STAGING_GMAIL_USER') || Deno.env.get('GMAIL_USER') || '';
 const GMAIL_APP_PASSWORD = Deno.env.get('STAGING_GMAIL_APP_PASSWORD') || Deno.env.get('GMAIL_APP_PASSWORD') || '';
 const RECIPIENT_EMAIL = Deno.env.get('STAGING_RECIPIENT_EMAIL') || Deno.env.get('RECIPIENT_EMAIL') || GMAIL_USER;
+// Stands in for markus@blank.at during testing (e.g. Britta). Cc is skipped if unset.
+const CC_EMAIL = Deno.env.get('STAGING_CC_EMAIL') || '';
 
 interface FileAttachment {
   name: string;
@@ -488,10 +492,12 @@ Deno.serve(async (req) => {
     const transporter = createTransporter();
 
     // 1. Back-office email (internal — unchanged wording, with attachments)
-    // STAGING: no Markus cc, [TEST] subject prefix so it can't be confused with a real lead.
+    // STAGING role-play: to = tester as back-office, cc = tester as Markus (STAGING_CC_EMAIL,
+    // not the real markus@blank.at). [TEST] subject prefix so it can't be confused with a real lead.
     await transporter.sendMail({
       from: `"Blank Konfigurator" <${GMAIL_USER}>`,
       to: RECIPIENT_EMAIL,
+      ...(CC_EMAIL ? { cc: CC_EMAIL } : {}),
       replyTo: data.customerEmail,
       subject: `[TEST] Neue Klappladen - Anfrage von ${data.customerName}`,
       html: generateEmailHTML(data, 'backoffice'),
