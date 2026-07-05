@@ -139,10 +139,42 @@ function generateEmailHTML(data: QuoteRequest, variant: 'backoffice' | 'customer
     : `Eingegangen am ${dateStr} um ${timeStr} Uhr`;
   const customerInfoHeading = isCustomer ? 'Ihre Angaben' : 'Kundeninformationen';
 
-  // Structured address (Koram-style: Straße, then Land PLZ Ort). Falls back to legacy customerAddress.
-  const streetLine = customerStreet || customerAddress || '';
-  const cityLine = [customerCountry, customerZip, customerCity].filter(Boolean).join(' ');
-  const addressHTML = [streetLine, cityLine].filter(Boolean).join('<br>');
+  // Address for display. When the split fields exist, show each as its own labelled
+  // field (Straße / Land / PLZ / Ort — Koram-style, copy-paste ready). Otherwise fall
+  // back to the legacy single "Adresse" line from older payloads.
+  const hasStructuredAddr = !!(customerStreet || customerCountry || customerZip || customerCity);
+  const legacyAddress = customerAddress || '';
+  const addressRowsHTML = hasStructuredAddr ? `
+              ${customerStreet ? `
+              <tr>
+                <td colspan="2">
+                  <span class="data-label">Straße</span>
+                  <div class="data-value" style="font-size: 15px;">${customerStreet}</div>
+                </td>
+              </tr>` : ''}
+              <tr>
+                <td>
+                  <span class="data-label">Land</span>
+                  <div class="data-value" style="font-size: 15px;">${customerCountry || '-'}</div>
+                </td>
+                <td>
+                  <span class="data-label">PLZ</span>
+                  <div class="data-value" style="font-size: 15px;">${customerZip || '-'}</div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="data-label">Ort</span>
+                  <div class="data-value" style="font-size: 15px;">${customerCity || '-'}</div>
+                </td>
+                <td></td>
+              </tr>` : (legacyAddress ? `
+              <tr>
+                <td colspan="2">
+                  <span class="data-label">Adresse</span>
+                  <div class="data-value" style="font-size: 14px;">${legacyAddress}</div>
+                </td>
+              </tr>` : '');
 
   return `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -203,29 +235,22 @@ function generateEmailHTML(data: QuoteRequest, variant: 'backoffice' | 'customer
                   </div>
                 </td>
               </tr>
-              ${customerPhone ? `
+              ${customerPhone || customerCompany ? `
               <tr>
+                ${customerPhone ? `
                 <td>
                   <span class="data-label">Telefon</span>
                   <div class="data-value">
                     <a href="tel:${customerPhone}" style="color: #1a1a1a; text-decoration: none; border-bottom: 1px dotted #ccc;">${customerPhone}</a>
                   </div>
-                </td>
-                <td></td>
-              </tr>` : ''}
-              ${customerCompany || addressHTML ? `
-              <tr>
+                </td>` : '<td></td>'}
                 ${customerCompany ? `
                 <td>
                   <span class="data-label">Firma</span>
                   <div class="data-value">${customerCompany}</div>
                 </td>` : '<td></td>'}
-                ${addressHTML ? `
-                <td>
-                  <span class="data-label">Adresse</span>
-                  <div class="data-value" style="font-size: 14px;">${addressHTML}</div>
-                </td>` : '<td></td>'}
               </tr>` : ''}
+              ${addressRowsHTML}
             </table>
           </div>
 
