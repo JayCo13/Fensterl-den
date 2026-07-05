@@ -164,21 +164,24 @@ function generateEmailHTML(data: QuoteRequest, variant: 'backoffice' | 'customer
                 </td>
               </tr>` : ''}
               <tr>
-                <td>
-                  <span class="data-label">Land</span>
-                  <div class="data-value" style="font-size: 15px;">${customerCountry || '-'}</div>
+                <td colspan="2" style="padding-top: 4px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout: fixed;">
+                    <tr>
+                      <td style="width: 33%; vertical-align: top; padding-right: 12px;">
+                        <span class="data-label">Land</span>
+                        <div class="data-value" style="font-size: 15px; margin-bottom: 0;">${customerCountry || '-'}</div>
+                      </td>
+                      <td style="width: 33%; vertical-align: top; padding-right: 12px;">
+                        <span class="data-label">PLZ</span>
+                        <div class="data-value" style="font-size: 15px; margin-bottom: 0;">${customerZip || '-'}</div>
+                      </td>
+                      <td style="width: 34%; vertical-align: top;">
+                        <span class="data-label">Ort</span>
+                        <div class="data-value" style="font-size: 15px; margin-bottom: 0;">${customerCity || '-'}</div>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
-                <td>
-                  <span class="data-label">PLZ</span>
-                  <div class="data-value" style="font-size: 15px;">${customerZip || '-'}</div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <span class="data-label">Ort</span>
-                  <div class="data-value" style="font-size: 15px;">${customerCity || '-'}</div>
-                </td>
-                <td></td>
               </tr>` : (legacyAddress ? `
               <tr>
                 <td colspan="2">
