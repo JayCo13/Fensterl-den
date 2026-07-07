@@ -1,15 +1,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import nodemailer from "npm:nodemailer@6.9.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Gmail SMTP configuration
-const GMAIL_USER = Deno.env.get('GMAIL_USER') || '';
-const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD') || '';
-const RECIPIENT_EMAIL = Deno.env.get('RECIPIENT_EMAIL') || GMAIL_USER;
+// Resend configuration
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || '';
+// Verified Resend sender. Override with RESEND_FROM if the domain/name changes.
+const FROM_EMAIL = Deno.env.get('RESEND_FROM') || 'Blank <info@blank.at>';
+const RECIPIENT_EMAIL = Deno.env.get('RECIPIENT_EMAIL') || '';
 
 interface FileAttachment {
   name: string;
@@ -461,15 +461,40 @@ function generateEmailHTML(data: QuoteRequest, variant: 'backoffice' | 'customer
   `;
 }
 
-// Create nodemailer transporter for Gmail
-function createTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: GMAIL_USER,
-      pass: GMAIL_APP_PASSWORD,
+interface SendArgs {
+  to: string;
+  cc?: string;
+  replyTo?: string;
+  subject: string;
+  html: string;
+  attachments?: { filename: string; content: string }[];
+}
+
+// Send one email via the Resend API. Throws on a non-2xx response so callers can handle it.
+async function sendViaResend({ to, cc, replyTo, subject, html, attachments }: SendArgs) {
+  const payload: Record<string, unknown> = {
+    from: FROM_EMAIL,
+    to: [to],
+    subject,
+    html,
+  };
+  if (cc) payload.cc = [cc];
+  if (replyTo) payload.reply_to = replyTo;
+  if (attachments && attachments.length > 0) payload.attachments = attachments;
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify(payload),
   });
+
+  if (!res.ok) {
+    throw new Error(`Resend API error ${res.status}: ${await res.text()}`);
+  }
+  return await res.json();
 }
 
 Deno.serve(async (req) => {
@@ -489,28 +514,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check Gmail configuration
-    if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-      console.error('Gmail credentials not configured');
+    // Check Resend configuration
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'Email service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Build nodemailer attachments from base64 files
+    // Build attachments (base64) from the uploaded files
     const mailAttachments = data.attachments?.map((file) => ({
       filename: file.name,
       content: file.data,
-      encoding: 'base64',
-      contentType: file.type,
     })) || [];
 
-    const transporter = createTransporter();
-
     // 1. Back-office email (internal — unchanged wording, with attachments)
-    await transporter.sendMail({
-      from: `"Blank Konfigurator" <${GMAIL_USER}>`,
+    await sendViaResend({
       to: RECIPIENT_EMAIL,
       cc: 'markus@blank.at',
       replyTo: data.customerEmail,
@@ -523,8 +543,7 @@ Deno.serve(async (req) => {
 
     // 2. Customer confirmation email (best-effort — must NOT fail the request if it errors)
     try {
-      await transporter.sendMail({
-        from: `"Blank" <${GMAIL_USER}>`,
+      await sendViaResend({
         to: data.customerEmail,
         replyTo: RECIPIENT_EMAIL,
         subject: 'Vielen Dank für Ihre Anfrage',

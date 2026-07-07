@@ -1,24 +1,20 @@
 // ⚠️ STAGING/TEST COPY of send-quote-email — for Tai + Britta to test on the Netlify
-// preview before it goes live. Differences vs. prod: uses STAGING_* test mailboxes,
-// the Markus cc is redirected to STAGING_CC_EMAIL (a tester playing Markus) instead of
-// the real markus@blank.at, and the back-office subject is prefixed "[TEST]".
+// preview before it goes live. Differences vs. prod: back-office goes to
+// STAGING_RECIPIENT_EMAIL and the Markus cc is redirected to STAGING_CC_EMAIL (a tester
+// playing Markus, not the real markus@blank.at); back-office subject is prefixed "[TEST]".
 // Role-play: STAGING_RECIPIENT_EMAIL = back-office (to), STAGING_CC_EMAIL = Markus (cc).
-// Delete this function once the change is promoted.
+// Sends via Resend (same RESEND_API_KEY / RESEND_FROM as prod). Delete once promoted.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import nodemailer from "npm:nodemailer@6.9.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Gmail SMTP configuration — STAGING mailboxes.
-// Set these 3 secrets on the Supabase project so testing never touches the
-// production sender / back-office inbox. Falls back to the prod secrets if unset,
-// so the function still runs (but then it is NOT isolated).
-const GMAIL_USER = Deno.env.get('STAGING_GMAIL_USER') || Deno.env.get('GMAIL_USER') || '';
-const GMAIL_APP_PASSWORD = Deno.env.get('STAGING_GMAIL_APP_PASSWORD') || Deno.env.get('GMAIL_APP_PASSWORD') || '';
-const RECIPIENT_EMAIL = Deno.env.get('STAGING_RECIPIENT_EMAIL') || Deno.env.get('RECIPIENT_EMAIL') || GMAIL_USER;
+// Resend configuration (shared project key) + STAGING recipients.
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || '';
+const FROM_EMAIL = Deno.env.get('RESEND_FROM') || 'Blank <info@blank.at>';
+const RECIPIENT_EMAIL = Deno.env.get('STAGING_RECIPIENT_EMAIL') || Deno.env.get('RECIPIENT_EMAIL') || '';
 // Stands in for markus@blank.at during testing (e.g. Britta). Cc is skipped if unset.
 const CC_EMAIL = Deno.env.get('STAGING_CC_EMAIL') || '';
 
@@ -472,15 +468,40 @@ function generateEmailHTML(data: QuoteRequest, variant: 'backoffice' | 'customer
   `;
 }
 
-// Create nodemailer transporter for Gmail
-function createTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: GMAIL_USER,
-      pass: GMAIL_APP_PASSWORD,
+interface SendArgs {
+  to: string;
+  cc?: string;
+  replyTo?: string;
+  subject: string;
+  html: string;
+  attachments?: { filename: string; content: string }[];
+}
+
+// Send one email via the Resend API. Throws on a non-2xx response so callers can handle it.
+async function sendViaResend({ to, cc, replyTo, subject, html, attachments }: SendArgs) {
+  const payload: Record<string, unknown> = {
+    from: FROM_EMAIL,
+    to: [to],
+    subject,
+    html,
+  };
+  if (cc) payload.cc = [cc];
+  if (replyTo) payload.reply_to = replyTo;
+  if (attachments && attachments.length > 0) payload.attachments = attachments;
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify(payload),
   });
+
+  if (!res.ok) {
+    throw new Error(`Resend API error ${res.status}: ${await res.text()}`);
+  }
+  return await res.json();
 }
 
 Deno.serve(async (req) => {
@@ -500,32 +521,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check Gmail configuration
-    if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-      console.error('Gmail credentials not configured');
+    // Check Resend configuration
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'Email service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Build nodemailer attachments from base64 files
+    // Build attachments (base64) from the uploaded files
     const mailAttachments = data.attachments?.map((file) => ({
       filename: file.name,
       content: file.data,
-      encoding: 'base64',
-      contentType: file.type,
     })) || [];
-
-    const transporter = createTransporter();
 
     // 1. Back-office email (internal — unchanged wording, with attachments)
     // STAGING role-play: to = tester as back-office, cc = tester as Markus (STAGING_CC_EMAIL,
     // not the real markus@blank.at). [TEST] subject prefix so it can't be confused with a real lead.
-    await transporter.sendMail({
-      from: `"Blank Konfigurator" <${GMAIL_USER}>`,
+    await sendViaResend({
       to: RECIPIENT_EMAIL,
-      ...(CC_EMAIL ? { cc: CC_EMAIL } : {}),
+      cc: CC_EMAIL || undefined,
       replyTo: data.customerEmail,
       subject: `[TEST] Neue Klappladen - Anfrage von ${data.customerName}`,
       html: generateEmailHTML(data, 'backoffice'),
@@ -536,8 +552,7 @@ Deno.serve(async (req) => {
 
     // 2. Customer confirmation email (best-effort — must NOT fail the request if it errors)
     try {
-      await transporter.sendMail({
-        from: `"Blank" <${GMAIL_USER}>`,
+      await sendViaResend({
         to: data.customerEmail,
         replyTo: RECIPIENT_EMAIL,
         subject: 'Vielen Dank für Ihre Anfrage',
