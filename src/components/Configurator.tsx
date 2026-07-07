@@ -15,7 +15,6 @@ import { useWoodTypes, useDesigns, useRalColors, type WoodType, type Design, typ
 import { supabase } from "@/integrations/supabase/client";
 import { getRalHexColor, getRalName, isValidRalCode } from "@/lib/ralColors";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "./ui/textarea";
 
 const ScrollHintEffect = () => {
   useEffect(() => {
@@ -348,7 +347,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [customerAddress, setCustomerAddress] = useState("");
+  const [customerStreet, setCustomerStreet] = useState("");
+  const [customerCountry, setCustomerCountry] = useState("");
+  const [customerZip, setCustomerZip] = useState("");
+  const [customerCity, setCustomerCity] = useState("");
   const [customerCompany, setCustomerCompany] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -801,10 +803,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
   };
 
   const handleSubmitQuote = async () => {
-    if (!customerName || !customerEmail) {
+    if (!customerName || !customerEmail || !customerStreet || !customerCountry || !customerZip || !customerCity) {
       toast({
         title: "Fehler",
-        description: "Bitte geben Sie Ihren Namen und Ihre E-Mail-Adresse ein.",
+        description: "Bitte füllen Sie alle Pflichtfelder aus (Name, E-Mail und vollständige Adresse: Straße, Land, PLZ und Ort).",
         variant: "destructive"
       });
       return;
@@ -856,7 +858,12 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
           customerName,
           customerEmail,
           customerPhone: customerPhone || undefined,
-          customerAddress: customerAddress || undefined,
+          // Address — split fields (Koram-style) + composed fallback for the current email fn
+          customerStreet: customerStreet || undefined,
+          customerCountry: customerCountry || undefined,
+          customerZip: customerZip || undefined,
+          customerCity: customerCity || undefined,
+          customerAddress: [customerStreet, [customerCountry, customerZip, customerCity].filter(Boolean).join(" ")].filter(Boolean).join(", ") || undefined,
           customerCompany: customerCompany || undefined,
           // System Typ
           shutterType: shutterType === "klappladen" ? "Klappladen" : shutterType === "schiebeladen" ? "Schiebeladen" : "Falt-Schiebeladen",
@@ -936,7 +943,10 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
       setCustomerName("");
       setCustomerEmail("");
       setCustomerPhone("");
-      setCustomerAddress("");
+      setCustomerStreet("");
+      setCustomerCountry("");
+      setCustomerZip("");
+      setCustomerCity("");
       setCustomerCompany("");
     } catch (error) {
       console.error("Error sending quote:", error);
@@ -2956,17 +2966,54 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                 />
               </div>
 
-              {/* Adresse — full width */}
+              {/* Adresse — Straße (full width) */}
               <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="customer-address" className="text-xs sm:text-sm font-medium">Adresse <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                <Textarea
-                  id="customer-address"
-                  placeholder="Straße, PLZ, Ort"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
+                <Label htmlFor="customer-street" className="text-xs sm:text-sm font-medium">Straße *</Label>
+                <Input
+                  id="customer-street"
+                  placeholder="z. B. Montfortstraße 9"
+                  value={customerStreet}
+                  onChange={(e) => setCustomerStreet(e.target.value)}
                   disabled={isSubmitting}
                   className="text-sm sm:text-base h-10"
                 />
+              </div>
+
+              {/* Adresse — Land / PLZ / Ort */}
+              <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="customer-country" className="text-xs sm:text-sm font-medium">Land *</Label>
+                  <Input
+                    id="customer-country"
+                    placeholder="z. B. Österreich"
+                    value={customerCountry}
+                    onChange={(e) => setCustomerCountry(e.target.value)}
+                    disabled={isSubmitting}
+                    className="text-sm sm:text-base h-10"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="customer-zip" className="text-xs sm:text-sm font-medium">PLZ *</Label>
+                  <Input
+                    id="customer-zip"
+                    placeholder="z. B. 6850"
+                    value={customerZip}
+                    onChange={(e) => setCustomerZip(e.target.value)}
+                    disabled={isSubmitting}
+                    className="text-sm sm:text-base h-10"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="customer-city" className="text-xs sm:text-sm font-medium">Ort *</Label>
+                  <Input
+                    id="customer-city"
+                    placeholder="z. B. Dornbirn"
+                    value={customerCity}
+                    onChange={(e) => setCustomerCity(e.target.value)}
+                    disabled={isSubmitting}
+                    className="text-sm sm:text-base h-10"
+                  />
+                </div>
               </div>
             </div>
           </div>
