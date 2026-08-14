@@ -3016,14 +3016,6 @@ export const Configurator = ({ onMaterialChange, onDesignChange, onWoodTypeChang
                 </div>
               </div>
             </div>
-
-            {/* Betriebsurlaub-Hinweis */}
-            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-xs sm:text-sm text-amber-900 leading-relaxed">
-                Wir sind vom <strong>3. bis 14. August 2026</strong> im Betriebsurlaub und werden uns danach um Ihre Anfrage kümmern.
-              </p>
-            </div>
           </div>
 
           {/* Footer */}
